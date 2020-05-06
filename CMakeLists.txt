@@ -92,6 +92,9 @@ add_executable(EM_tracing
     ${output_file}   
     ${EM_SRC_DIR}/main.cpp 
     ${EM_INCLUDE_DIR}/optix7.h
+    ${EM_INCLUDE_DIR}/CUDABuffer.h
+    ${EM_SRC_DIR}/SampleRenderer.cpp 
+    ${EM_INCLUDE_DIR}/SampleRenderer.h 
     )
 add_dependencies(EM_tracing CudaPTX)
 target_include_directories(EM_tracing PUBLIC ${EM_INCLUDE_DIR})

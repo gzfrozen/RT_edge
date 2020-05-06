@@ -53,6 +53,9 @@ extern "C" __global__ void __miss__radiance()
 { /*! for this simple example, this will remain empty */
 }
 
+//------------------------------------------------------------------------------
+// ray gen program - the actual rendering happens in here
+//------------------------------------------------------------------------------
 extern "C" __global__ void __raygen__renderFrame()
 {
     if (optixLaunchParams.frameID == 0 &&
