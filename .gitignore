@@ -1,0 +1,13 @@
+*~
+.#*
+*#
+bin
+build
+*.autosave
+*.gz
+*.zip
+/models/*
+*.swp
+*.png
+.vscode
+**embedded_objs.c
