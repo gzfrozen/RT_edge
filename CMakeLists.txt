@@ -40,10 +40,10 @@ target_link_libraries(CudaPTX
 # Request that target be built with -std=c++14
 # As this is a public compile feature anything that links to it
 # will also build with -std=c++14
-target_compile_features(CudaPTX PUBLIC cxx_std_14)
+target_compile_features(CudaPTX PRIVATE cxx_std_14)
 
 # Set your GPU architecture
-target_compile_options(CudaPTX PUBLIC -arch=compute_75)
+target_compile_options(CudaPTX PRIVATE -arch=compute_75 --use_fast_math)
 
 # We need to explicitly state that we need all CUDA files to be compiled into 
 # PTX files, and built with -dc as the member functions could be called by
@@ -97,7 +97,7 @@ add_executable(EM_tracing
     ${EM_INCLUDE_DIR}/SampleRenderer.h 
     )
 add_dependencies(EM_tracing CudaPTX)
-target_include_directories(EM_tracing PUBLIC ${EM_INCLUDE_DIR})
+target_include_directories(EM_tracing PRIVATE ${EM_INCLUDE_DIR})
 target_link_libraries(EM_tracing
   gdt
   ${optix_LIBRARY}
@@ -105,7 +105,7 @@ target_link_libraries(EM_tracing
   ${CUDA_CUDA_LIBRARY}
   )
 
-target_compile_features(EM_tracing PUBLIC cxx_std_14)
+target_compile_features(EM_tracing PRIVATE cxx_std_17)
 
 set_target_properties(EM_tracing PROPERTIES 
   POSITION_INDEPENDENT_CODE ON 
