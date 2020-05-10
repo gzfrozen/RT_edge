@@ -18,7 +18,7 @@
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
 
-extern "C" char devicePrograms[];
+extern "C" const unsigned char devicePrograms[];
 
 /*! SBT record for a raygen program */
 struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecord
@@ -152,7 +152,7 @@ void SampleRenderer::createModule()
   pipelineLinkOptions.overrideUsesMotionBlur = false;
   pipelineLinkOptions.maxTraceDepth = 2;
 
-  const std::string ptxCode = devicePrograms;
+  const std::string ptxCode = reinterpret_cast<const char *>(devicePrograms);
 
   char log[2048];
   size_t sizeof_log = sizeof(log);

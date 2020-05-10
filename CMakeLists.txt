@@ -17,10 +17,11 @@ include(${gdt_dir}/cmake/configure_build_type.cmake)
 include(${gdt_dir}/cmake/configure_optix.cmake)
 
 # ------------------------------------------------------------------
-# import gdt submodule
+# import gdt and other submodule
 # ------------------------------------------------------------------
 include_directories(${gdt_dir})
 add_subdirectory(${gdt_dir} EXCLUDE_FROM_ALL)
+include_directories(${PROJECT_SOURCE_DIR}/support/3rdParty/)
 
 # Setting directories
 set(EM_SRC_DIR ${PROJECT_SOURCE_DIR}/src CACHE PATH "Project source directory")
@@ -51,7 +52,6 @@ target_compile_options(CudaPTX PRIVATE -arch=compute_75 --use_fast_math)
 set_target_properties(CudaPTX PROPERTIES 
   CUDA_PTX_COMPILATION ON 
   POSITION_INDEPENDENT_CODE ON 
-  CUDA_SEPARABLE_COMPILATION ON
   )
 
 #We are going to need a wrapper around bin2c for multiple reasons
@@ -81,10 +81,10 @@ add_custom_command(
     "-DBIN_TO_C_COMMAND=${bin_to_c}"
     "-DOBJECTS=$<TARGET_OBJECTS:CudaPTX>"
     "-DOUTPUT=${output_file}"
-    -P ${gdt_dir}/cmake/bin2c_wrapper.cmake
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/bin2c_wrapper.cmake
   VERBATIM
   DEPENDS $<TARGET_OBJECTS:CudaPTX>
-  COMMENT "Converting Object files to a C header"
+  COMMENT "Converting Object files to a C file"
   )
 
 # Main program
@@ -108,8 +108,7 @@ target_link_libraries(EM_tracing
 target_compile_features(EM_tracing PRIVATE cxx_std_17)
 
 set_target_properties(EM_tracing PROPERTIES 
-  POSITION_INDEPENDENT_CODE ON 
-  CUDA_SEPARABLE_COMPILATION ON)
+  POSITION_INDEPENDENT_CODE ON )
 
 if(APPLE)
 # We need to add the default path to the driver (libcuda.dylib) as an rpath,
