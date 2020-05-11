@@ -19,9 +19,24 @@ include(${gdt_dir}/cmake/configure_optix.cmake)
 # ------------------------------------------------------------------
 # import gdt and other submodule
 # ------------------------------------------------------------------
+find_package(OpenGL REQUIRED)
 include_directories(${gdt_dir})
 add_subdirectory(${gdt_dir} EXCLUDE_FROM_ALL)
 include_directories(${PROJECT_SOURCE_DIR}/support/3rdParty/)
+
+# ------------------------------------------------------------------
+# build glfw
+# ------------------------------------------------------------------
+set(OpenGL_GL_PREFERENCE LEGACY)
+if (WIN32)
+  set(glfw_dir ${PROJECT_SOURCE_DIR}/support/3rdParty/glfw/)
+  include_directories(${glfw_dir}/include)
+  add_subdirectory(${glfw_dir} EXCLUDE_FROM_ALL)
+else()
+  find_package(glfw3 REQUIRED)
+endif()
+include_directories(${PROJECT_SOURCE_DIR}/support/glfWindow)
+add_subdirectory(${PROJECT_SOURCE_DIR}/support/glfWindow EXCLUDE_FROM_ALL)
 
 # Setting directories
 set(EM_SRC_DIR ${PROJECT_SOURCE_DIR}/src CACHE PATH "Project source directory")
@@ -103,6 +118,9 @@ target_link_libraries(EM_tracing
   ${optix_LIBRARY}
   ${CUDA_LIBRARIES}
   ${CUDA_CUDA_LIBRARY}
+  glfw
+  glfWindow
+  ${OPENGL_gl_LIBRARY}
   )
 
 target_compile_features(EM_tracing PRIVATE cxx_std_17)
