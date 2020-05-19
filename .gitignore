@@ -10,4 +10,4 @@ build
 *.swp
 *.png
 .vscode
-**embedded_objs.c
+**embedded_objs.cpp

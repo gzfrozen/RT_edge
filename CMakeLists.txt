@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
-project(EM_tracing LANGUAGES C CXX CUDA)
+project(EM_tracing LANGUAGES CXX CUDA)
 
 if (MSVC)
     # set source code format to UTF-8 
@@ -69,13 +69,16 @@ set_target_properties(CudaPTX PROPERTIES
   POSITION_INDEPENDENT_CODE ON 
   )
 
+# Precompile headers setting
+target_precompile_headers(CudaPTX PRIVATE <optix_device.h>)
+
 #We are going to need a wrapper around bin2c for multiple reasons
 # 1. bin2c only converts a single file at a time
 # 2. bin2c has only standard out support, so we have to manually
 # redirect to a cmake buffer
 # 3. We want to pack everything into a single output file, so we
 # need to also pass the --name option
-set(output_file ${EM_SRC_DIR}/embedded_objs.c)
+set(output_file ${EM_SRC_DIR}/embedded_objs.cpp)
 
 get_filename_component(cuda_compiler_bin "${CMAKE_CUDA_COMPILER}" DIRECTORY)
 find_program(bin_to_c
@@ -127,6 +130,14 @@ target_compile_features(EM_tracing PRIVATE cxx_std_17)
 
 set_target_properties(EM_tracing PROPERTIES 
   POSITION_INDEPENDENT_CODE ON )
+
+target_precompile_headers(EM_tracing PRIVATE 
+  <assert.h>
+  <vector>
+ [["optix7.h"]]
+ [["GLFWindow.h"]]
+  <GL/gl.h>
+  )
 
 if(APPLE)
 # We need to add the default path to the driver (libcuda.dylib) as an rpath,
