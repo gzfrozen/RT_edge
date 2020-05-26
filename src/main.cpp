@@ -20,15 +20,26 @@
 #include "GLFWindow.h"
 #include <GL/gl.h>
 
-struct SampleWindow : public GLFWindow
+struct SampleWindow : public GLFCameraWindow
 {
-    SampleWindow(const std::string &title)
-        : GLFWindow(title)
+    SampleWindow(const std::string &title,
+                 const TriangleMesh &model,
+                 const Camera &camera,
+                 const float worldScale)
+        : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale),
+          sample(model)
     {
     }
 
     virtual void render() override
     {
+        if (cameraFrame.modified)
+        {
+            sample.setCamera(Camera{cameraFrame.get_from(),
+                                    cameraFrame.get_at(),
+                                    cameraFrame.get_up()});
+            cameraFrame.modified = false;
+        }
         sample.render();
     }
 
@@ -99,7 +110,22 @@ extern "C" int main(int ac, char **av)
 {
     try
     {
-        SampleWindow *window = new SampleWindow("Optix 7 Example");
+        TriangleMesh model;
+        // 100x100 thin ground plane
+        model.addCube(vec3f(0.f, -1.5f, 0.f), vec3f(10.f, .1f, 10.f));
+        // a unit cube centered on top of that
+        model.addCube(vec3f(0.f, 0.f, 0.f), vec3f(2.f, 2.f, 2.f));
+
+        Camera camera = {/*from*/ vec3f(-10.f, 2.f, -12.f),
+                         /* at */ vec3f(0.f, 0.f, 0.f),
+                         /* up */ vec3f(0.f, 1.f, 0.f)};
+
+        // something approximating the scale of the world, so the
+        // camera knows how much to move for any given user interaction:
+        const float worldScale = 10.f;
+
+        SampleWindow *window = new SampleWindow("Optix 7 Example",
+                                                model, camera, worldScale);
         window->run();
     }
     catch (std::runtime_error &e)

@@ -19,6 +19,32 @@
 // our own classes, partly shared between host and device
 #include "CUDABuffer.h"
 #include "LaunchParams.h"
+#include "gdt/math/AffineSpace.h"
+
+struct Camera
+{
+  /*! camera position - *from* where we are looking */
+  vec3f from;
+  /*! which point we are looking *at* */
+  vec3f at;
+  /*! general up-vector */
+  vec3f up;
+};
+
+/*! a simple indexed triangle mesh that our sample renderer will
+      render */
+struct TriangleMesh
+{
+  /*! add a unit cube (subject to given xfm matrix) to the current
+        triangleMesh */
+  void addUnitCube(const affine3f &xfm);
+
+  //! add aligned cube aith front-lower-left corner and size
+  void addCube(const vec3f &center, const vec3f &size);
+
+  std::vector<vec3f> vertex;
+  std::vector<vec3i> index;
+};
 
 /*! a sample OptiX-7 renderer that demonstrates how to set up
       context, module, programs, pipeline, SBT, etc, and perform a
@@ -32,7 +58,7 @@ class SampleRenderer
 public:
   /*! constructor - performs all setup, including initializing
       optix, creates module, pipeline, programs, SBT, etc. */
-  SampleRenderer();
+  SampleRenderer(const TriangleMesh &model);
 
   /*! render one frame */
   void render();
@@ -42,6 +68,9 @@ public:
 
   /*! download the rendered color buffer */
   void downloadPixels(uint32_t h_pixels[]);
+
+  /*! set camera to render with */
+  void setCamera(const Camera &camera);
 
 protected:
   // ------------------------------------------------------------------
@@ -74,6 +103,9 @@ protected:
 
   /*! constructs the shader binding table */
   void buildSBT();
+
+  /*! build an acceleration structure for the given triangle mesh */
+  OptixTraversableHandle buildAccel(const TriangleMesh &model);
 
 protected:
   /*! @{ CUDA device context and stream that optix pipeline will run
@@ -114,4 +146,14 @@ protected:
   /*! @} */
 
   CUDABuffer colorBuffer;
+
+  /*! the camera we are to render with. */
+  Camera lastSetCamera;
+
+  /*! the model we are going to trace rays against */
+  const TriangleMesh model;
+  CUDABuffer vertexBuffer;
+  CUDABuffer indexBuffer;
+  //! buffer that keeps the (final, compacted) accel structure
+  CUDABuffer asBuffer;
 };
