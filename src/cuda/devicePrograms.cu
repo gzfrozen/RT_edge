@@ -63,9 +63,21 @@ static __forceinline__ __device__ T *getPRD()
 
 extern "C" __global__ void __closesthit__radiance()
 {
+    const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *)optixGetSbtDataPointer();
+
+    // compute normal:
     const int primID = optixGetPrimitiveIndex();
+    const vec3i index = sbtData.index[primID];
+    const vec3f &A = sbtData.vertex[index.x];
+    const vec3f &B = sbtData.vertex[index.y];
+    const vec3f &C = sbtData.vertex[index.z];
+    const vec3f Ng = normalize(cross(B - A, C - A));
+
+    const vec3f rayDir = optixGetWorldRayDirection();
+    const float cosDN = 0.2f + .8f * fabsf(dot(rayDir, Ng));
+
     vec3f &prd = *getPRD<vec3f>();
-    prd = gdt::randomColor(primID);
+    prd = cosDN * sbtData.color;
 }
 
 extern "C" __global__ void __anyhit__radiance()

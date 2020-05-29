@@ -44,6 +44,7 @@ struct TriangleMesh
 
   std::vector<vec3f> vertex;
   std::vector<vec3i> index;
+  vec3f color;
 };
 
 /*! a sample OptiX-7 renderer that demonstrates how to set up

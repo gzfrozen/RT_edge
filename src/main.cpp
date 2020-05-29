@@ -115,6 +115,7 @@ extern "C" int main(int ac, char **av)
         model.addCube(vec3f(0.f, -1.5f, 0.f), vec3f(10.f, .1f, 10.f));
         // a unit cube centered on top of that
         model.addCube(vec3f(0.f, 0.f, 0.f), vec3f(2.f, 2.f, 2.f));
+        model.color = vec3f(.2f, .8f, .2f);
 
         Camera camera = {/*from*/ vec3f(-10.f, 2.f, -12.f),
                          /* at */ vec3f(0.f, 0.f, 0.f),

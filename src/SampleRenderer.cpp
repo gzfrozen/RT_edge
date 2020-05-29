@@ -42,9 +42,7 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) MissRecord
 struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
 {
   __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
-  // just a dummy value - later examples will use more interesting
-  // data here
-  int objectID;
+  TriangleMeshSBTData data;
 };
 
 //! add aligned cube with front-lower-left corner and size
@@ -87,6 +85,7 @@ void TriangleMesh::addUnitCube(const affine3f &xfm)
 /*! constructor - performs all setup, including initializing
     optix, creates module, pipeline, programs, SBT, etc. */
 SampleRenderer::SampleRenderer(const TriangleMesh &model)
+    : model(model)
 {
   initOptix();
 
@@ -486,7 +485,9 @@ void SampleRenderer::buildSBT()
     int objectType = 0;
     HitgroupRecord rec;
     OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[objectType], &rec));
-    rec.objectID = i;
+    rec.data.vertex = (vec3f *)vertexBuffer.d_pointer();
+    rec.data.index = (vec3i *)indexBuffer.d_pointer();
+    rec.data.color = model.color;
     hitgroupRecords.push_back(rec);
   }
   hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
