@@ -48,6 +48,7 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
 //! add aligned cube with front-lower-left corner and size
 void TriangleMesh::addCube(const vec3f &center, const vec3f &size)
 {
+  PING;
   affine3f xfm;
   xfm.p = center - 0.5f * size;
   xfm.l.vx = vec3f(size.x, 0.f, 0.f);
@@ -84,8 +85,8 @@ void TriangleMesh::addUnitCube(const affine3f &xfm)
 
 /*! constructor - performs all setup, including initializing
     optix, creates module, pipeline, programs, SBT, etc. */
-SampleRenderer::SampleRenderer(const TriangleMesh &model)
-    : model(model)
+SampleRenderer::SampleRenderer(const std::vector<TriangleMesh> &meshes)
+    : meshes(meshes)
 {
   initOptix();
 
@@ -102,7 +103,7 @@ SampleRenderer::SampleRenderer(const TriangleMesh &model)
   std::cout << "#osc: creating hitgroup programs ..." << std::endl;
   createHitgroupPrograms();
 
-  launchParams.traversable = buildAccel(model);
+  launchParams.traversable = buildAccel();
 
   std::cout << "#osc: setting up optix pipeline ..." << std::endl;
   createPipeline();
@@ -118,44 +119,56 @@ SampleRenderer::SampleRenderer(const TriangleMesh &model)
   std::cout << GDT_TERMINAL_DEFAULT;
 }
 
-OptixTraversableHandle SampleRenderer::buildAccel(const TriangleMesh &model)
+OptixTraversableHandle SampleRenderer::buildAccel()
 {
-  // upload the model to the device: the builder
-  vertexBuffer.alloc_and_upload(model.vertex);
-  indexBuffer.alloc_and_upload(model.index);
+  vertexBuffer.resize(meshes.size());
+  indexBuffer.resize(meshes.size());
 
   OptixTraversableHandle asHandle{0};
 
   // ==================================================================
   // triangle inputs
   // ==================================================================
-  OptixBuildInput triangleInput = {};
-  triangleInput.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+  std::vector<OptixBuildInput> triangleInput(meshes.size());
+  std::vector<CUdeviceptr> d_vertices(meshes.size());
+  std::vector<CUdeviceptr> d_indices(meshes.size());
+  std::vector<uint32_t> triangleInputFlags(meshes.size());
 
-  // create local variables, because we need a *pointer* to the
-  // device pointers
-  CUdeviceptr d_vertices = vertexBuffer.d_pointer();
-  CUdeviceptr d_indices = indexBuffer.d_pointer();
+  for (int meshID = 0; meshID < meshes.size(); meshID++)
+  {
+    // upload the model to the device: the builder
+    TriangleMesh &model = meshes[meshID];
+    vertexBuffer[meshID].alloc_and_upload(model.vertex);
+    indexBuffer[meshID].alloc_and_upload(model.index);
 
-  triangleInput.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
-  triangleInput.triangleArray.vertexStrideInBytes = sizeof(vec3f);
-  triangleInput.triangleArray.numVertices = (int)model.vertex.size();
-  triangleInput.triangleArray.vertexBuffers = &d_vertices;
+    triangleInput[meshID] = {};
+    triangleInput[meshID].type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
 
-  triangleInput.triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
-  triangleInput.triangleArray.indexStrideInBytes = sizeof(vec3i);
-  triangleInput.triangleArray.numIndexTriplets = (int)model.index.size();
-  triangleInput.triangleArray.indexBuffer = d_indices;
+    // create local variables, because we need a *pointer* to the
+    // device pointers
+    d_vertices[meshID] = vertexBuffer[meshID].d_pointer();
+    d_indices[meshID] = indexBuffer[meshID].d_pointer();
 
-  uint32_t triangleInputFlags[1] = {0};
+    triangleInput[meshID].triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
+    triangleInput[meshID].triangleArray.vertexStrideInBytes = sizeof(vec3f);
+    triangleInput[meshID].triangleArray.numVertices = (int)model.vertex.size();
+    triangleInput[meshID].triangleArray.vertexBuffers = &d_vertices[meshID];
 
-  // in this example we have one SBT entry, and no per-primitive
-  // materials:
-  triangleInput.triangleArray.flags = triangleInputFlags;
-  triangleInput.triangleArray.numSbtRecords = 1;
-  triangleInput.triangleArray.sbtIndexOffsetBuffer = 0;
-  triangleInput.triangleArray.sbtIndexOffsetSizeInBytes = 0;
-  triangleInput.triangleArray.sbtIndexOffsetStrideInBytes = 0;
+    triangleInput[meshID].triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
+    triangleInput[meshID].triangleArray.indexStrideInBytes = sizeof(vec3i);
+    triangleInput[meshID].triangleArray.numIndexTriplets = (int)model.index.size();
+    triangleInput[meshID].triangleArray.indexBuffer = d_indices[meshID];
+
+    triangleInputFlags[meshID] = 0;
+
+    // in this example we have one SBT entry, and no per-primitive
+    // materials:
+    triangleInput[meshID].triangleArray.flags = &triangleInputFlags[meshID];
+    triangleInput[meshID].triangleArray.numSbtRecords = 1;
+    triangleInput[meshID].triangleArray.sbtIndexOffsetBuffer = 0;
+    triangleInput[meshID].triangleArray.sbtIndexOffsetSizeInBytes = 0;
+    triangleInput[meshID].triangleArray.sbtIndexOffsetStrideInBytes = 0;
+  }
 
   // ==================================================================
   // BLAS setup
@@ -169,8 +182,8 @@ OptixTraversableHandle SampleRenderer::buildAccel(const TriangleMesh &model)
   OptixAccelBufferSizes blasBufferSizes;
   OPTIX_CHECK(optixAccelComputeMemoryUsage(optixContext,
                                            &accelOptions,
-                                           &triangleInput,
-                                           1, // num_build_inputs
+                                           triangleInput.data(),
+                                           (int)meshes.size(), // num_build_inputs
                                            &blasBufferSizes));
 
   // ==================================================================
@@ -197,8 +210,8 @@ OptixTraversableHandle SampleRenderer::buildAccel(const TriangleMesh &model)
   OPTIX_CHECK(optixAccelBuild(optixContext,
                               /* stream */ 0,
                               &accelOptions,
-                              &triangleInput,
-                              1,
+                              triangleInput.data(),
+                              (int)meshes.size(),
                               tempBuffer.d_pointer(),
                               tempBuffer.sizeInBytes,
 
@@ -474,20 +487,16 @@ void SampleRenderer::buildSBT()
   // ------------------------------------------------------------------
   // build hitgroup records
   // ------------------------------------------------------------------
-
-  // we don't actually have any objects in this example, but let's
-  // create a dummy one so the SBT doesn't have any null pointers
-  // (which the sanity checks in compilation would complain about)
-  int numObjects = 1;
+  int numObjects = (int)meshes.size();
   std::vector<HitgroupRecord> hitgroupRecords;
-  for (int i = 0; i < numObjects; i++)
+  for (int meshID = 0; meshID < numObjects; meshID++)
   {
-    int objectType = 0;
     HitgroupRecord rec;
-    OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[objectType], &rec));
-    rec.data.vertex = (vec3f *)vertexBuffer.d_pointer();
-    rec.data.index = (vec3i *)indexBuffer.d_pointer();
-    rec.data.color = model.color;
+    // all meshes use the same code, so all same hit group
+    OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
+    rec.data.color = meshes[meshID].color;
+    rec.data.vertex = (vec3f *)vertexBuffer[meshID].d_pointer();
+    rec.data.index = (vec3i *)indexBuffer[meshID].d_pointer();
     hitgroupRecords.push_back(rec);
   }
   hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);

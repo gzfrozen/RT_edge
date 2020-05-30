@@ -23,11 +23,11 @@
 struct SampleWindow : public GLFCameraWindow
 {
     SampleWindow(const std::string &title,
-                 const TriangleMesh &model,
+                 const std::vector<TriangleMesh> &meshes,
                  const Camera &camera,
                  const float worldScale)
         : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale),
-          sample(model)
+          sample(meshes)
     {
     }
 
@@ -110,12 +110,13 @@ extern "C" int main(int ac, char **av)
 {
     try
     {
-        TriangleMesh model;
+        std::vector<TriangleMesh> meshes(2);
         // 100x100 thin ground plane
-        model.addCube(vec3f(0.f, -1.5f, 0.f), vec3f(10.f, .1f, 10.f));
+        meshes[0].color = vec3f(0.f, 1.f, 0.f);
+        meshes[0].addCube(vec3f(0.f, -1.5f, 0.f), vec3f(10.f, .1f, 10.f));
         // a unit cube centered on top of that
-        model.addCube(vec3f(0.f, 0.f, 0.f), vec3f(2.f, 2.f, 2.f));
-        model.color = vec3f(.2f, .8f, .2f);
+        meshes[1].color = vec3f(0.f, 1.f, 1.f);
+        meshes[1].addCube(vec3f(0.f, 0.f, 0.f), vec3f(2.f, 2.f, 2.f));
 
         Camera camera = {/*from*/ vec3f(-10.f, 2.f, -12.f),
                          /* at */ vec3f(0.f, 0.f, 0.f),
@@ -126,7 +127,7 @@ extern "C" int main(int ac, char **av)
         const float worldScale = 10.f;
 
         SampleWindow *window = new SampleWindow("Optix 7 Example",
-                                                model, camera, worldScale);
+                                                meshes, camera, worldScale);
         window->run();
     }
     catch (std::runtime_error &e)

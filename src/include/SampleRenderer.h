@@ -59,7 +59,7 @@ class SampleRenderer
 public:
   /*! constructor - performs all setup, including initializing
       optix, creates module, pipeline, programs, SBT, etc. */
-  SampleRenderer(const TriangleMesh &model);
+  SampleRenderer(const std::vector<TriangleMesh> &meshes);
 
   /*! render one frame */
   void render();
@@ -106,7 +106,7 @@ protected:
   void buildSBT();
 
   /*! build an acceleration structure for the given triangle mesh */
-  OptixTraversableHandle buildAccel(const TriangleMesh &model);
+  OptixTraversableHandle buildAccel();
 
 protected:
   /*! @{ CUDA device context and stream that optix pipeline will run
@@ -152,9 +152,11 @@ protected:
   Camera lastSetCamera;
 
   /*! the model we are going to trace rays against */
-  const TriangleMesh model;
-  CUDABuffer vertexBuffer;
-  CUDABuffer indexBuffer;
+  std::vector<TriangleMesh> meshes;
+  /*! one buffer per input mesh */
+  std::vector<CUDABuffer> vertexBuffer;
+  /*! one buffer per input mesh */
+  std::vector<CUDABuffer> indexBuffer;
   //! buffer that keeps the (final, compacted) accel structure
   CUDABuffer asBuffer;
 };
