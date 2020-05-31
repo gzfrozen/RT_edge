@@ -16,7 +16,7 @@
 
 #include <optix_device.h>
 
-#include "LaunchParams.h"
+#include "LaunchParams.hpp"
 
 /*! launch parameters in constant memory, filled in by optix upon
       optixLaunch (this gets filled in from the buffer we pass to

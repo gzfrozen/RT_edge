@@ -17,8 +17,8 @@
 #pragma once
 
 // our own classes, partly shared between host and device
-#include "CUDABuffer.h"
-#include "LaunchParams.h"
+#include "CUDABuffer.hpp"
+#include "LaunchParams.hpp"
 #include "gdt/math/AffineSpace.h"
 
 struct Camera

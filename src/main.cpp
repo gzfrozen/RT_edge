@@ -14,7 +14,7 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include "SampleRenderer.h"
+#include "SampleRenderer.hpp"
 
 // our helper library for window handling
 #include "GLFWindow.h"

@@ -6,7 +6,7 @@ build
 *.autosave
 *.gz
 *.zip
-/models/*
+models
 *.swp
 *.png
 .vscode

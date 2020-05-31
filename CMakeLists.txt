@@ -109,10 +109,7 @@ add_custom_command(
 add_executable(EM_tracing 
     ${output_file}   
     ${EM_SRC_DIR}/main.cpp 
-    ${EM_INCLUDE_DIR}/optix7.h
-    ${EM_INCLUDE_DIR}/CUDABuffer.h
     ${EM_SRC_DIR}/SampleRenderer.cpp 
-    ${EM_INCLUDE_DIR}/SampleRenderer.h 
     )
 add_dependencies(EM_tracing CudaPTX)
 target_include_directories(EM_tracing PRIVATE ${EM_INCLUDE_DIR})
@@ -127,6 +124,8 @@ target_link_libraries(EM_tracing
   )
 
 target_compile_features(EM_tracing PRIVATE cxx_std_17)
+# Set your OBJ files' path
+target_compile_definitions(EM_tracing PUBLIC _MODEL_PATH="${PROJECT_SOURCE_DIR}/models/")
 
 set_target_properties(EM_tracing PROPERTIES 
   POSITION_INDEPENDENT_CODE ON )
@@ -134,10 +133,12 @@ set_target_properties(EM_tracing PROPERTIES
 target_precompile_headers(EM_tracing PRIVATE 
   <assert.h>
   <vector>
- [["optix7.h"]]
+ [["optix7.hpp"]]
  [["GLFWindow.h"]]
   <GL/gl.h>
-  )
+ [["gdt/math/vec.h"]]
+ [["gdt/math/AffineSpace.h"]]
+ )
 
 if(APPLE)
 # We need to add the default path to the driver (libcuda.dylib) as an rpath,

@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "optix7.h"
+#include "optix7.hpp"
 // common std stuff
 #include <vector>
 #include <assert.h>

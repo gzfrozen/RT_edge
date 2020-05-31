@@ -14,7 +14,7 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include "SampleRenderer.h"
+#include "SampleRenderer.hpp"
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
 
