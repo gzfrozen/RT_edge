@@ -45,48 +45,10 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
   TriangleMeshSBTData data;
 };
 
-//! add aligned cube with front-lower-left corner and size
-void TriangleMesh::addCube(const vec3f &center, const vec3f &size)
-{
-  PING;
-  affine3f xfm;
-  xfm.p = center - 0.5f * size;
-  xfm.l.vx = vec3f(size.x, 0.f, 0.f);
-  xfm.l.vy = vec3f(0.f, size.y, 0.f);
-  xfm.l.vz = vec3f(0.f, 0.f, size.z);
-  addUnitCube(xfm);
-}
-
-/*! add a unit cube (subject to given xfm matrix) to the current
-      triangleMesh */
-void TriangleMesh::addUnitCube(const affine3f &xfm)
-{
-  int firstVertexID = (int)vertex.size();
-  vertex.push_back(xfmPoint(xfm, vec3f(0.f, 0.f, 0.f)));
-  vertex.push_back(xfmPoint(xfm, vec3f(1.f, 0.f, 0.f)));
-  vertex.push_back(xfmPoint(xfm, vec3f(0.f, 1.f, 0.f)));
-  vertex.push_back(xfmPoint(xfm, vec3f(1.f, 1.f, 0.f)));
-  vertex.push_back(xfmPoint(xfm, vec3f(0.f, 0.f, 1.f)));
-  vertex.push_back(xfmPoint(xfm, vec3f(1.f, 0.f, 1.f)));
-  vertex.push_back(xfmPoint(xfm, vec3f(0.f, 1.f, 1.f)));
-  vertex.push_back(xfmPoint(xfm, vec3f(1.f, 1.f, 1.f)));
-
-  int indices[] = {0, 1, 3, 2, 3, 0,
-                   5, 7, 6, 5, 6, 4,
-                   0, 4, 5, 0, 5, 1,
-                   2, 3, 7, 2, 7, 6,
-                   1, 5, 7, 1, 7, 3,
-                   4, 0, 2, 4, 2, 6};
-  for (int i = 0; i < 12; i++)
-    index.push_back(firstVertexID + vec3i(indices[3 * i + 0],
-                                          indices[3 * i + 1],
-                                          indices[3 * i + 2]));
-}
-
 /*! constructor - performs all setup, including initializing
     optix, creates module, pipeline, programs, SBT, etc. */
-SampleRenderer::SampleRenderer(const std::vector<TriangleMesh> &meshes)
-    : meshes(meshes)
+SampleRenderer::SampleRenderer(const Model *model)
+    : model(model)
 {
   initOptix();
 
@@ -121,25 +83,28 @@ SampleRenderer::SampleRenderer(const std::vector<TriangleMesh> &meshes)
 
 OptixTraversableHandle SampleRenderer::buildAccel()
 {
-  vertexBuffer.resize(meshes.size());
-  indexBuffer.resize(meshes.size());
+  PING;
+  PRINT(model->meshes.size());
+
+  vertexBuffer.resize(model->meshes.size());
+  indexBuffer.resize(model->meshes.size());
 
   OptixTraversableHandle asHandle{0};
 
   // ==================================================================
   // triangle inputs
   // ==================================================================
-  std::vector<OptixBuildInput> triangleInput(meshes.size());
-  std::vector<CUdeviceptr> d_vertices(meshes.size());
-  std::vector<CUdeviceptr> d_indices(meshes.size());
-  std::vector<uint32_t> triangleInputFlags(meshes.size());
+  std::vector<OptixBuildInput> triangleInput(model->meshes.size());
+  std::vector<CUdeviceptr> d_vertices(model->meshes.size());
+  std::vector<CUdeviceptr> d_indices(model->meshes.size());
+  std::vector<uint32_t> triangleInputFlags(model->meshes.size());
 
-  for (int meshID = 0; meshID < meshes.size(); meshID++)
+  for (int meshID = 0; meshID < model->meshes.size(); meshID++)
   {
     // upload the model to the device: the builder
-    TriangleMesh &model = meshes[meshID];
-    vertexBuffer[meshID].alloc_and_upload(model.vertex);
-    indexBuffer[meshID].alloc_and_upload(model.index);
+    TriangleMesh &mesh = *model->meshes[meshID];
+    vertexBuffer[meshID].alloc_and_upload(mesh.vertex);
+    indexBuffer[meshID].alloc_and_upload(mesh.index);
 
     triangleInput[meshID] = {};
     triangleInput[meshID].type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
@@ -151,12 +116,12 @@ OptixTraversableHandle SampleRenderer::buildAccel()
 
     triangleInput[meshID].triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
     triangleInput[meshID].triangleArray.vertexStrideInBytes = sizeof(vec3f);
-    triangleInput[meshID].triangleArray.numVertices = (int)model.vertex.size();
+    triangleInput[meshID].triangleArray.numVertices = (int)mesh.vertex.size();
     triangleInput[meshID].triangleArray.vertexBuffers = &d_vertices[meshID];
 
     triangleInput[meshID].triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
     triangleInput[meshID].triangleArray.indexStrideInBytes = sizeof(vec3i);
-    triangleInput[meshID].triangleArray.numIndexTriplets = (int)model.index.size();
+    triangleInput[meshID].triangleArray.numIndexTriplets = (int)mesh.index.size();
     triangleInput[meshID].triangleArray.indexBuffer = d_indices[meshID];
 
     triangleInputFlags[meshID] = 0;
@@ -183,7 +148,7 @@ OptixTraversableHandle SampleRenderer::buildAccel()
   OPTIX_CHECK(optixAccelComputeMemoryUsage(optixContext,
                                            &accelOptions,
                                            triangleInput.data(),
-                                           (int)meshes.size(), // num_build_inputs
+                                           (int)model->meshes.size(), // num_build_inputs
                                            &blasBufferSizes));
 
   // ==================================================================
@@ -211,7 +176,7 @@ OptixTraversableHandle SampleRenderer::buildAccel()
                               /* stream */ 0,
                               &accelOptions,
                               triangleInput.data(),
-                              (int)meshes.size(),
+                              (int)model->meshes.size(),
                               tempBuffer.d_pointer(),
                               tempBuffer.sizeInBytes,
 
@@ -487,14 +452,14 @@ void SampleRenderer::buildSBT()
   // ------------------------------------------------------------------
   // build hitgroup records
   // ------------------------------------------------------------------
-  int numObjects = (int)meshes.size();
+  int numObjects = (int)model->meshes.size();
   std::vector<HitgroupRecord> hitgroupRecords;
   for (int meshID = 0; meshID < numObjects; meshID++)
   {
     HitgroupRecord rec;
     // all meshes use the same code, so all same hit group
     OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
-    rec.data.color = meshes[meshID].color;
+    rec.data.color = model->meshes[meshID]->diffuse;
     rec.data.vertex = (vec3f *)vertexBuffer[meshID].d_pointer();
     rec.data.index = (vec3i *)indexBuffer[meshID].d_pointer();
     hitgroupRecords.push_back(rec);

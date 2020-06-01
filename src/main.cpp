@@ -23,11 +23,11 @@
 struct SampleWindow : public GLFCameraWindow
 {
     SampleWindow(const std::string &title,
-                 const std::vector<TriangleMesh> &meshes,
+                 const Model *model,
                  const Camera &camera,
                  const float worldScale)
         : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale),
-          sample(meshes)
+          sample(model)
     {
     }
 
@@ -110,30 +110,25 @@ extern "C" int main(int ac, char **av)
 {
     try
     {
-        std::vector<TriangleMesh> meshes(2);
-        // 100x100 thin ground plane
-        meshes[0].color = vec3f(0.f, 1.f, 0.f);
-        meshes[0].addCube(vec3f(0.f, -1.5f, 0.f), vec3f(10.f, .1f, 10.f));
-        // a unit cube centered on top of that
-        meshes[1].color = vec3f(0.f, 1.f, 1.f);
-        meshes[1].addCube(vec3f(0.f, 0.f, 0.f), vec3f(2.f, 2.f, 2.f));
 
-        Camera camera = {/*from*/ vec3f(-10.f, 2.f, -12.f),
-                         /* at */ vec3f(0.f, 0.f, 0.f),
+        Model *model = loadOBJ(_OBJ_FILE);
+        Camera camera = {/*from*/ vec3f(-1293.07f, 154.681f, -0.7304f),
+                         /* at */ model->bounds.center() - vec3f(0, 400, 0),
                          /* up */ vec3f(0.f, 1.f, 0.f)};
 
         // something approximating the scale of the world, so the
         // camera knows how much to move for any given user interaction:
-        const float worldScale = 10.f;
+        const float worldScale = length(model->bounds.span());
 
         SampleWindow *window = new SampleWindow("Optix 7 Example",
-                                                meshes, camera, worldScale);
+                                                model, camera, worldScale);
         window->run();
     }
     catch (std::runtime_error &e)
     {
         std::cout << GDT_TERMINAL_RED << "FATAL ERROR: " << e.what()
                   << GDT_TERMINAL_DEFAULT << std::endl;
+        std::cout << "Did you forget to copy sponza.obj and sponza.mtl into your EM_tracing/models directory?" << std::endl;
         exit(1);
     }
     return 0;

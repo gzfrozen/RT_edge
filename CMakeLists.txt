@@ -110,6 +110,7 @@ add_executable(EM_tracing
     ${output_file}   
     ${EM_SRC_DIR}/main.cpp 
     ${EM_SRC_DIR}/SampleRenderer.cpp 
+    ${EM_SRC_DIR}/Model.cpp 
     )
 add_dependencies(EM_tracing CudaPTX)
 target_include_directories(EM_tracing PRIVATE ${EM_INCLUDE_DIR})
@@ -124,8 +125,9 @@ target_link_libraries(EM_tracing
   )
 
 target_compile_features(EM_tracing PRIVATE cxx_std_17)
-# Set your OBJ files' path
-target_compile_definitions(EM_tracing PUBLIC _MODEL_PATH="${PROJECT_SOURCE_DIR}/models/")
+
+# Set your OBJ file path
+target_compile_definitions(EM_tracing PUBLIC _OBJ_FILE="${PROJECT_SOURCE_DIR}/models/sponza.obj")
 
 set_target_properties(EM_tracing PROPERTIES 
   POSITION_INDEPENDENT_CODE ON )
