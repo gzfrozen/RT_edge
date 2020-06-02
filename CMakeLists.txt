@@ -140,6 +140,8 @@ target_precompile_headers(EM_tracing PRIVATE
   <GL/gl.h>
  [["gdt/math/vec.h"]]
  [["gdt/math/AffineSpace.h"]]
+ [["tiny_obj_loader.h"]]
+ [["stb_image.h"]]
  )
 
 if(APPLE)

@@ -1,11 +1,3 @@
-#ifndef _WIN32
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wcomma"
-#pragma clang diagnostic ignored "-Wshadow"
-#pragma clang diagnostic ignored "-Wcast-qual"
-#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
-#endif
-
 /* stb_image - v2.15 - public domain image loader - http://nothings.org/stb_image.h
                                      no warranty implied; use at your own risk
 
@@ -142,11 +134,12 @@ RECENT REVISION HISTORY:
 // with each pixel consisting of N interleaved 8-bit components; the first
 // pixel pointed to is top-left-most in the image. There is no padding between
 // image scanlines or between pixels, regardless of format. The number of
-// components N is 'req_comp' if req_comp is non-zero, or *comp otherwise.
-// If req_comp is non-zero, *comp has the number of components that _would_
-// have been output otherwise. E.g. if you set req_comp to 4, you will always
-// get RGBA output, but you can check *comp to see if it's trivially opaque
-// because e.g. there were only 3 channels in the source image.
+// components N is 'desired_channels' if desired_channels is non-zero, or
+// *channels_in_file otherwise. If desired_channels is non-zero,
+// *channels_in_file has the number of components that _would_ have been
+// output otherwise. E.g. if you set desired_channels to 4, you will always
+// get RGBA output, but you can check *channels_in_file to see if it's trivially
+// opaque because e.g. there were only 3 channels in the source image.
 //
 // An output image with N components has the following components interleaved
 // in this order in each pixel:
@@ -158,10 +151,10 @@ RECENT REVISION HISTORY:
 //       4           red, green, blue, alpha
 //
 // If image loading fails for any reason, the return value will be NULL,
-// and *x, *y, *comp will be unchanged. The function stbi_failure_reason()
-// can be queried for an extremely brief, end-user unfriendly explanation
-// of why the load failed. Define STBI_NO_FAILURE_STRINGS to avoid
-// compiling these strings at all, and STBI_FAILURE_USERMSG to get slightly
+// and *x, *y, *channels_in_file will be unchanged. The function
+// stbi_failure_reason() can be queried for an extremely brief, end-user
+// unfriendly explanation of why the load failed. Define STBI_NO_FAILURE_STRINGS
+// to avoid compiling these strings at all, and STBI_FAILURE_USERMSG to get slightly
 // more user-friendly ones.
 //
 // Paletted PNG, BMP, GIF, and PIC images are automatically depalettized.
@@ -318,7 +311,7 @@ RECENT REVISION HISTORY:
 
 enum
 {
-   STBI_default = 0, // only used for req_comp
+   STBI_default = 0, // only used for desired_channels
 
    STBI_grey       = 1,
    STBI_grey_alpha = 2,
@@ -1053,7 +1046,7 @@ static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, 
 
    // @TODO: move stbi__convert_format to here
 
-   if (result && stbi__vertically_flip_on_load) {
+   if (stbi__vertically_flip_on_load) {
       int w = *x, h = *y;
       int channels = req_comp ? req_comp : *comp;
       int row,col,z;
@@ -1091,7 +1084,7 @@ static stbi__uint16 *stbi__load_and_postprocess_16bit(stbi__context *s, int *x, 
    // @TODO: move stbi__convert_format16 to here
    // @TODO: special case RGB-to-Y (and RGBA-to-YA) for 8-bit-to-16-bit case to keep more precision
 
-   if (result && stbi__vertically_flip_on_load) {
+   if (stbi__vertically_flip_on_load) {
       int w = *x, h = *y;
       int channels = req_comp ? req_comp : *comp;
       int row,col,z;
@@ -3555,7 +3548,7 @@ static stbi_uc *load_jpeg_image(stbi__jpeg *z, int *out_x, int *out_y, int *comp
       int k;
       unsigned int i,j;
       stbi_uc *output;
-      stbi_uc *coutput[4] = {};
+      stbi_uc *coutput[4];
 
       stbi__resample res_comp[4];
 
@@ -3690,9 +3683,8 @@ static stbi_uc *load_jpeg_image(stbi__jpeg *z, int *out_x, int *out_y, int *comp
 
 static void *stbi__jpeg_load(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri)
 {
-   unsigned char* result = nullptr;
+   unsigned char* result;
    stbi__jpeg* j = (stbi__jpeg*) stbi__malloc(sizeof(stbi__jpeg));
-   if(!j) return result;
    STBI_NOTUSED(ri);
    j->s = s;
    stbi__setup_jpeg(j);
@@ -3705,7 +3697,6 @@ static int stbi__jpeg_test(stbi__context *s)
 {
    int r;
    stbi__jpeg* j = (stbi__jpeg*)stbi__malloc(sizeof(stbi__jpeg));
-   if(!j) return stbi__err("outofmem", "Out of memory");
    j->s = s;
    stbi__setup_jpeg(j);
    r = stbi__decode_jpeg_header(j, STBI__SCAN_type);
@@ -3730,7 +3721,6 @@ static int stbi__jpeg_info(stbi__context *s, int *x, int *y, int *comp)
 {
    int result;
    stbi__jpeg* j = (stbi__jpeg*) (stbi__malloc(sizeof(stbi__jpeg)));
-   if(!j) return stbi__err("outofmem", "Out of memory");
    j->s = s;
    result = stbi__jpeg_info_raw(j, x, y, comp);
    STBI_FREE(j);
@@ -5111,7 +5101,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
    }
 
    s->img_n = ma ? 4 : 3;
-   if (req_comp >= 3) // we can directly decode 3 or 4
+   if (req_comp && req_comp >= 3) // we can directly decode 3 or 4
       target = req_comp;
    else
       target = s->img_n; // if they want monochrome, we'll post-convert
@@ -6014,7 +6004,7 @@ static void *stbi__pic_load(stbi__context *s,int *px,int *py,int *comp,int req_c
 
    if (!stbi__pic_load_core(s,x,y,comp, result)) {
       STBI_FREE(result);
-      return nullptr;
+      result=0;
    }
    *px = x;
    *py = y;
@@ -6119,7 +6109,6 @@ static int stbi__gif_header(stbi__context *s, stbi__gif *g, int *comp, int is_in
 static int stbi__gif_info_raw(stbi__context *s, int *x, int *y, int *comp)
 {
    stbi__gif* g = (stbi__gif*) stbi__malloc(sizeof(stbi__gif));
-   if(!g) return stbi__err("outofmem", "Out of memory");
    if (!stbi__gif_header(s, g, comp, 1)) {
       STBI_FREE(g);
       stbi__rewind( s );
@@ -6384,7 +6373,6 @@ static void *stbi__gif_load(stbi__context *s, int *x, int *y, int *comp, int req
 {
    stbi_uc *u = 0;
    stbi__gif* g = (stbi__gif*) stbi__malloc(sizeof(stbi__gif));
-   if (!g) return u;
    memset(g, 0, sizeof(*g));
    STBI_NOTUSED(ri);
 
@@ -7188,5 +7176,3 @@ ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ------------------------------------------------------------------------------
 */
-
-#pragma clang diagnostic pop
