@@ -70,7 +70,10 @@ set_target_properties(CudaPTX PROPERTIES
   )
 
 # Precompile headers setting
-target_precompile_headers(CudaPTX PRIVATE <optix_device.h>)
+target_precompile_headers(CudaPTX PRIVATE 
+    <optix_device.h>
+    <cuda_runtime.h>
+    )
 
 #We are going to need a wrapper around bin2c for multiple reasons
 # 1. bin2c only converts a single file at a time

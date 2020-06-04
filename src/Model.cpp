@@ -17,6 +17,10 @@
 #include "Model.hpp"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 //std
 #include <set>
 
@@ -59,7 +63,7 @@ int addVertex(TriangleMesh *mesh,
   const vec3f *normal_array = (const vec3f *)attributes.normals.data();
   const vec2f *texcoord_array = (const vec2f *)attributes.texcoords.data();
 
-  int newID = mesh->vertex.size();
+  int newID = (int)mesh->vertex.size();
   knownVertices[idx] = newID;
 
   mesh->vertex.push_back(vertex_array[idx.vertex_index]);
@@ -84,12 +88,71 @@ int addVertex(TriangleMesh *mesh,
   return newID;
 }
 
+/*! load a texture (if not already loaded), and return its ID in the
+      model's textures[] vector. Textures that could not get loaded
+      return -1 */
+int loadTexture(Model *model,
+                std::map<std::string, int> &knownTextures,
+                const std::string &inFileName,
+                const std::string &modelPath)
+{
+  if (inFileName == "")
+    return -1;
+
+  if (knownTextures.find(inFileName) != knownTextures.end())
+    return knownTextures[inFileName];
+
+  std::string fileName = inFileName;
+  // first, fix backspaces:
+  for (auto &c : fileName)
+    if (c == '\\')
+      c = '/';
+  fileName = modelPath + "/" + fileName;
+
+  vec2i res;
+  int comp;
+  unsigned char *image = stbi_load(fileName.c_str(),
+                                   &res.x, &res.y, &comp, STBI_rgb_alpha);
+  int textureID = -1;
+  if (image)
+  {
+    textureID = (int)model->textures.size();
+    Texture *texture = new Texture;
+    texture->resolution = res;
+    texture->pixel = (uint32_t *)image;
+
+    /* iw - actually, it seems that stbi loads the pictures
+         mirrored along the y axis - mirror them here */
+    for (int y = 0; y < res.y / 2; y++)
+    {
+      uint32_t *line_y = texture->pixel + y * res.x;
+      uint32_t *mirrored_y = texture->pixel + (res.y - 1 - y) * res.x;
+      for (int x = 0; x < res.x; x++)
+      {
+        std::swap(line_y[x], mirrored_y[x]);
+      }
+    }
+
+    model->textures.push_back(texture);
+  }
+  else
+  {
+    std::cout << GDT_TERMINAL_RED
+              << "Could not load texture from " << fileName << "!"
+              << GDT_TERMINAL_DEFAULT << std::endl;
+  }
+
+  knownTextures[inFileName] = textureID;
+  return textureID;
+}
+
 Model *loadOBJ(const std::string &objFile)
 {
+  std::cout << GDT_TERMINAL_YELLOW;
+  std::cout << "Loading obj file ..." << std::endl;
   Model *model = new Model;
 
-  const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
-  PRINT(mtlDir);
+  const std::string modelDir = objFile.substr(0, objFile.rfind('/') + 1);
 
   tinyobj::attrib_t attributes;
   std::vector<tinyobj::shape_t> shapes;
@@ -102,18 +165,21 @@ Model *loadOBJ(const std::string &objFile)
                                  &err,
                                  &err,
                                  objFile.c_str(),
-                                 mtlDir.c_str(),
+                                 modelDir.c_str(),
                                  /* triangulate */ true);
   if (!readOK)
   {
-    throw std::runtime_error("Could not read OBJ model from " + objFile + ":" + mtlDir + " : " + err);
+    throw std::runtime_error("Could not read OBJ model from " + objFile + ":" + modelDir + " : " + err);
   }
 
   if (materials.empty())
     throw std::runtime_error("could not parse materials ...");
 
-  std::cout << "Done loading obj file - found " << shapes.size() << " shapes with " << materials.size() << " materials" << std::endl;
-  for (int shapeID = 0; shapeID < (int)shapes.size(); shapeID++)
+  int numShapes = shapes.size();
+  std::cout << "Done loading obj file - found " << numShapes << " shapes with " << materials.size() << " materials" << std::endl;
+  std::cout << "Loading shapes ..." << std::endl;
+
+  for (int shapeID = 0; shapeID < numShapes; shapeID++)
   {
     tinyobj::shape_t &shape = shapes[shapeID];
 
@@ -122,6 +188,7 @@ Model *loadOBJ(const std::string &objFile)
       materialIDs.insert(faceMatID);
 
     std::map<tinyobj::index_t, int> knownVertices;
+    std::map<std::string, int> knownTextures;
 
     for (int materialID : materialIDs)
     {
@@ -140,7 +207,10 @@ Model *loadOBJ(const std::string &objFile)
                   addVertex(mesh, attributes, idx2, knownVertices));
         mesh->index.push_back(idx);
         mesh->diffuse = (const vec3f &)materials[materialID].diffuse;
-        mesh->diffuse = gdt::randomColor(materialID);
+        mesh->diffuseTextureID = loadTexture(model,
+                                             knownTextures,
+                                             materials[materialID].diffuse_texname,
+                                             modelDir);
       }
 
       if (mesh->vertex.empty())
@@ -148,7 +218,12 @@ Model *loadOBJ(const std::string &objFile)
       else
         model->meshes.push_back(mesh);
     }
+    if (shapeID % 100 == 99)
+    {
+      std::cout << "Done loading " << shapeID + 1 << " shapes in total " << numShapes << " shapes" << std::endl;
+    }
   }
+  std::cout << "Done all " << std::endl;
 
   // of course, you should be using tbb::parallel_for for stuff
   // like this:
@@ -157,5 +232,6 @@ Model *loadOBJ(const std::string &objFile)
       model->bounds.extend(vtx);
 
   std::cout << "created a total of " << model->meshes.size() << " meshes" << std::endl;
+  std::cout << GDT_TERMINAL_DEFAULT;
   return model;
 }

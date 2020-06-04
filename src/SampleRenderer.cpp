@@ -64,11 +64,14 @@ SampleRenderer::SampleRenderer(const Model *model)
   createMissPrograms();
   std::cout << "#osc: creating hitgroup programs ..." << std::endl;
   createHitgroupPrograms();
-
+  std::cout << "#osc: building accel structure ..." << std::endl;
   launchParams.traversable = buildAccel();
 
   std::cout << "#osc: setting up optix pipeline ..." << std::endl;
   createPipeline();
+
+  std::cout << "#osc: creating textures ..." << std::endl;
+  createTextures();
 
   std::cout << "#osc: building SBT ..." << std::endl;
   buildSBT();
@@ -81,30 +84,88 @@ SampleRenderer::SampleRenderer(const Model *model)
   std::cout << GDT_TERMINAL_DEFAULT;
 }
 
+void SampleRenderer::createTextures()
+{
+  int numTextures = (int)model->textures.size();
+
+  textureArrays.resize(numTextures);
+  textureObjects.resize(numTextures);
+
+  for (int textureID = 0; textureID < numTextures; textureID++)
+  {
+    auto texture = model->textures[textureID];
+
+    cudaResourceDesc res_desc = {};
+
+    cudaChannelFormatDesc channel_desc;
+    int32_t width = texture->resolution.x;
+    int32_t height = texture->resolution.y;
+    int32_t numComponents = 4;
+    int32_t pitch = width * numComponents * sizeof(uint8_t);
+    channel_desc = cudaCreateChannelDesc<uchar4>();
+
+    cudaArray_t &pixelArray = textureArrays[textureID];
+    CUDA_CHECK(MallocArray(&pixelArray,
+                           &channel_desc,
+                           width, height));
+
+    CUDA_CHECK(Memcpy2DToArray(pixelArray,
+                               /* offset */ 0, 0,
+                               texture->pixel,
+                               pitch, pitch, height,
+                               cudaMemcpyHostToDevice));
+
+    res_desc.resType = cudaResourceTypeArray;
+    res_desc.res.array.array = pixelArray;
+
+    cudaTextureDesc tex_desc = {};
+    tex_desc.addressMode[0] = cudaAddressModeWrap;
+    tex_desc.addressMode[1] = cudaAddressModeWrap;
+    tex_desc.filterMode = cudaFilterModeLinear;
+    tex_desc.readMode = cudaReadModeNormalizedFloat;
+    tex_desc.normalizedCoords = 1;
+    tex_desc.maxAnisotropy = 1;
+    tex_desc.maxMipmapLevelClamp = 99;
+    tex_desc.minMipmapLevelClamp = 0;
+    tex_desc.mipmapFilterMode = cudaFilterModePoint;
+    tex_desc.borderColor[0] = 1.0f;
+    tex_desc.sRGB = 0;
+
+    // Create texture object
+    cudaTextureObject_t cuda_tex = 0;
+    CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
+    textureObjects[textureID] = cuda_tex;
+  }
+}
+
 OptixTraversableHandle SampleRenderer::buildAccel()
 {
-  PING;
-  PRINT(model->meshes.size());
-
-  vertexBuffer.resize(model->meshes.size());
-  indexBuffer.resize(model->meshes.size());
+  const int numMeshes = (int)model->meshes.size();
+  vertexBuffer.resize(numMeshes);
+  normalBuffer.resize(numMeshes);
+  texcoordBuffer.resize(numMeshes);
+  indexBuffer.resize(numMeshes);
 
   OptixTraversableHandle asHandle{0};
 
   // ==================================================================
   // triangle inputs
   // ==================================================================
-  std::vector<OptixBuildInput> triangleInput(model->meshes.size());
-  std::vector<CUdeviceptr> d_vertices(model->meshes.size());
-  std::vector<CUdeviceptr> d_indices(model->meshes.size());
-  std::vector<uint32_t> triangleInputFlags(model->meshes.size());
+  std::vector<OptixBuildInput> triangleInput(numMeshes);
+  std::vector<CUdeviceptr> d_vertices(numMeshes);
+  std::vector<CUdeviceptr> d_indices(numMeshes);
+  std::vector<uint32_t> triangleInputFlags(numMeshes);
 
-  for (int meshID = 0; meshID < model->meshes.size(); meshID++)
+  for (int meshID = 0; meshID < numMeshes; meshID++)
   {
     // upload the model to the device: the builder
     TriangleMesh &mesh = *model->meshes[meshID];
     vertexBuffer[meshID].alloc_and_upload(mesh.vertex);
     indexBuffer[meshID].alloc_and_upload(mesh.index);
+    if (!mesh.normal.empty())
+      normalBuffer[meshID].alloc_and_upload(mesh.normal);
+    if (!mesh.texcoord.empty())
+      texcoordBuffer[meshID].alloc_and_upload(mesh.texcoord);
 
     triangleInput[meshID] = {};
     triangleInput[meshID].type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
@@ -148,7 +209,7 @@ OptixTraversableHandle SampleRenderer::buildAccel()
   OPTIX_CHECK(optixAccelComputeMemoryUsage(optixContext,
                                            &accelOptions,
                                            triangleInput.data(),
-                                           (int)model->meshes.size(), // num_build_inputs
+                                           numMeshes, // num_build_inputs
                                            &blasBufferSizes));
 
   // ==================================================================
@@ -176,7 +237,7 @@ OptixTraversableHandle SampleRenderer::buildAccel()
                               /* stream */ 0,
                               &accelOptions,
                               triangleInput.data(),
-                              (int)model->meshes.size(),
+                              numMeshes,
                               tempBuffer.d_pointer(),
                               tempBuffer.sizeInBytes,
 
@@ -456,12 +517,25 @@ void SampleRenderer::buildSBT()
   std::vector<HitgroupRecord> hitgroupRecords;
   for (int meshID = 0; meshID < numObjects; meshID++)
   {
+    auto mesh = model->meshes[meshID];
+
     HitgroupRecord rec;
     // all meshes use the same code, so all same hit group
     OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
-    rec.data.color = model->meshes[meshID]->diffuse;
-    rec.data.vertex = (vec3f *)vertexBuffer[meshID].d_pointer();
+    rec.data.color = mesh->diffuse;
+    if (mesh->diffuseTextureID >= 0)
+    {
+      rec.data.hasTexture = true;
+      rec.data.texture = textureObjects[mesh->diffuseTextureID];
+    }
+    else
+    {
+      rec.data.hasTexture = false;
+    }
     rec.data.index = (vec3i *)indexBuffer[meshID].d_pointer();
+    rec.data.vertex = (vec3f *)vertexBuffer[meshID].d_pointer();
+    rec.data.normal = (vec3f *)normalBuffer[meshID].d_pointer();
+    rec.data.texcoord = (vec2f *)texcoordBuffer[meshID].d_pointer();
     hitgroupRecords.push_back(rec);
   }
   hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);

@@ -92,6 +92,9 @@ protected:
   /*! build an acceleration structure for the given triangle mesh */
   OptixTraversableHandle buildAccel();
 
+  /*! upload textures, and create cuda texture objects for them */
+  void createTextures();
+
 protected:
   /*! @{ CUDA device context and stream that optix pipeline will run
         on, as well as device properties for this device */
@@ -137,10 +140,19 @@ protected:
 
   /*! the model we are going to trace rays against */
   const Model *model;
-  /*! one buffer per input mesh */
+
+  /*! @{ one buffer per input mesh */
   std::vector<CUDABuffer> vertexBuffer;
-  /*! one buffer per input mesh */
+  std::vector<CUDABuffer> normalBuffer;
+  std::vector<CUDABuffer> texcoordBuffer;
   std::vector<CUDABuffer> indexBuffer;
+  /*! @} */
+
   //! buffer that keeps the (final, compacted) accel structure
   CUDABuffer asBuffer;
+
+  /*! @{ one texture object and pixel array per used texture */
+  std::vector<cudaArray_t> textureArrays;
+  std::vector<cudaTextureObject_t> textureObjects;
+  /*! @} */
 };
