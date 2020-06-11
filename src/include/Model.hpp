@@ -35,6 +35,11 @@ struct TriangleMesh
   int diffuseTextureID{-1};
 };
 
+struct QuadLight
+{
+  vec3f origin, du, dv, power;
+};
+
 struct Texture
 {
   ~Texture()

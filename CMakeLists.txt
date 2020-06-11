@@ -73,6 +73,7 @@ set_target_properties(CudaPTX PROPERTIES
 target_precompile_headers(CudaPTX PRIVATE 
     <optix_device.h>
     <cuda_runtime.h>
+    [["gdt/random/random.h"]]
     )
 
 #We are going to need a wrapper around bin2c for multiple reasons
