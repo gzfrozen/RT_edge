@@ -21,6 +21,14 @@
 
 using namespace gdt;
 
+// for this example, we have two ray types
+enum
+{
+    RADIANCE_RAY_TYPE = 0,
+    SHADOW_RAY_TYPE,
+    RAY_TYPE_COUNT
+};
+
 struct TriangleMeshSBTData
 {
     vec3f color;

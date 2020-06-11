@@ -24,13 +24,6 @@
       optixLaunch) */
 extern "C" __constant__ LaunchParams optixLaunchParams;
 
-// for this simple example, we have a single ray type
-enum
-{
-    SURFACE_RAY_TYPE = 0,
-    RAY_TYPE_COUNT = 1
-};
-
 static __forceinline__ __device__ void *unpackPointer(uint32_t i0, uint32_t i1)
 {
     const uint64_t uptr = static_cast<uint64_t>(i0) << 32 | i1;
@@ -78,19 +71,26 @@ extern "C" __global__ void __closesthit__radiance()
     // compute normal, using either shading normal (if avail), or
     // geometry normal (fallback)
     // ------------------------------------------------------------------
-    vec3f N;
-    if (sbtData.normal)
-    {
-        N = (1.f - u - v) * sbtData.normal[index.x] + u * sbtData.normal[index.y] + v * sbtData.normal[index.z];
-        N = normalize(N);
-    }
-    else
-    {
-        const vec3f &A = sbtData.vertex[index.x];
-        const vec3f &B = sbtData.vertex[index.y];
-        const vec3f &C = sbtData.vertex[index.z];
-        N = normalize(cross(B - A, C - A));
-    }
+    const vec3f &A = sbtData.vertex[index.x];
+    const vec3f &B = sbtData.vertex[index.y];
+    const vec3f &C = sbtData.vertex[index.z];
+    vec3f Ng = cross(B - A, C - A);
+    vec3f Ns = (sbtData.normal)
+                   ? ((1.f - u - v) * sbtData.normal[index.x] + u * sbtData.normal[index.y] + v * sbtData.normal[index.z])
+                   : Ng;
+
+    // ------------------------------------------------------------------
+    // face-forward and normalize normals
+    // ------------------------------------------------------------------
+    const vec3f rayDir = optixGetWorldRayDirection();
+
+    if (dot(rayDir, Ng) > 0.f)
+        Ng = -Ng;
+    Ng = normalize(Ng);
+
+    if (dot(Ng, Ns) < 0.f)
+        Ns -= 2.f * dot(Ng, Ns) * Ng;
+    Ns = normalize(Ns);
 
     // ------------------------------------------------------------------
     // compute diffuse material color, including diffuse texture, if
@@ -105,16 +105,55 @@ extern "C" __global__ void __closesthit__radiance()
     }
 
     // ------------------------------------------------------------------
-    // perform some simple "NdotD" shading
+    // compute shadow
     // ------------------------------------------------------------------
-    const vec3f rayDir = optixGetWorldRayDirection();
-    const float cosDN = 0.2f + .8f * fabsf(dot(rayDir, N));
+    const vec3f surfPos = (1.f - u - v) * sbtData.vertex[index.x] + u * sbtData.vertex[index.y] + v * sbtData.vertex[index.z];
+    const vec3f lightPos(-907.108f, 2205.875f, -400.0267f);
+    const vec3f lightDir = lightPos - surfPos;
+
+    // trace shadow ray:
+    vec3f lightVisibility = 0.f;
+    // the values we store the PRD pointer in:
+    uint32_t u0, u1;
+    packPointer(&lightVisibility, u0, u1);
+    optixTrace(optixLaunchParams.traversable,
+               surfPos + 1e-3f * Ng,
+               lightDir,
+               1e-3f,       // tmin
+               1.f - 1e-3f, // tmax
+               0.0f,        // rayTime
+               OptixVisibilityMask(255),
+               // For shadow rays: skip any/closest hit shaders and terminate on first
+               // intersection with anything. The miss shader is used to mark if the
+               // light was visible.
+               OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
+               SHADOW_RAY_TYPE, // SBT offset
+               RAY_TYPE_COUNT,  // SBT stride
+               SHADOW_RAY_TYPE, // missSBTIndex
+               u0, u1);
+
+    // ------------------------------------------------------------------
+    // final shading: a bit of ambient, a bit of directional ambient,
+    // and directional component based on shadowing
+    // ------------------------------------------------------------------
+    const float cosDN = 0.1f + .8f * fabsf(dot(rayDir, Ns));
+
     vec3f &prd = *getPRD<vec3f>();
-    prd = cosDN * diffuseColor;
+    prd = (.1f + (.2f + .8f * lightVisibility) * cosDN) * diffuseColor;
+}
+
+extern "C" __global__ void __closesthit__shadow()
+{
+    /* not going to be used ... */
 }
 
 extern "C" __global__ void __anyhit__radiance()
 { /*! for this simple example, this will remain empty */
+}
+
+extern "C" __global__ void __anyhit__shadow()
+{
+    /* not going to be used ... */
 }
 
 //------------------------------------------------------------------------------
@@ -132,6 +171,13 @@ extern "C" __global__ void __miss__radiance()
     prd = vec3f(1.f);
 }
 
+extern "C" __global__ void __miss__shadow()
+{
+    // we didn't hit anything, so the light is visible
+    vec3f &prd = *getPRD<vec3f>();
+    prd = vec3f(1.f);
+}
+
 //------------------------------------------------------------------------------
 // ray gen program - the actual rendering happens in here
 //------------------------------------------------------------------------------
@@ -146,7 +192,7 @@ extern "C" __global__ void __raygen__renderFrame()
     // our per-ray data for this example. what we initialize it to
     // won't matter, since this value will be overwritten by either
     // the miss or hit program, anyway
-    vec3f pixelColorPRD = vec3f(0.f);
+    vec3f pixelColorPRD = 0.f;
 
     // the values we store the PRD pointer in:
     uint32_t u0, u1;
@@ -166,9 +212,9 @@ extern "C" __global__ void __raygen__renderFrame()
                0.0f,  // rayTime
                OptixVisibilityMask(255),
                OPTIX_RAY_FLAG_DISABLE_ANYHIT, //OPTIX_RAY_FLAG_NONE,
-               SURFACE_RAY_TYPE,              // SBT offset
+               RADIANCE_RAY_TYPE,             // SBT offset
                RAY_TYPE_COUNT,                // SBT stride
-               SURFACE_RAY_TYPE,              // missSBTIndex
+               RADIANCE_RAY_TYPE,             // missSBTIndex
                u0, u1);
 
     const int r = int(255.99f * pixelColorPRD.x);
