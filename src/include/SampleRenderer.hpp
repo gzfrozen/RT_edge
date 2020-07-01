@@ -31,6 +31,15 @@ struct Camera
   vec3f up;
 };
 
+/* An spherical camera */
+struct Env_camera
+{
+  /*! camera position - *center* of the camera sphere */
+  vec3f center;
+  /*! *radius* of the camera sphere */
+  vec3f radius;
+};
+
 /*! a sample OptiX-7 renderer that demonstrates how to set up
       context, module, programs, pipeline, SBT, etc, and perform a
       valid launch that renders some pixel (using a simple test

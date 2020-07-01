@@ -34,7 +34,8 @@ if (WIN32)
 #		set(OptiX_INSTALL_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 5.1.0" CACHE PATH "Path to OptiX installed location.")
 	find_path(searched_OptiX_INSTALL_DIR
 		NAME include/optix.h
-		PATHS
+    PATHS
+    "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.1.0"
 		"C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.0.0"
 		"C:/ProgramData/NVIDIA Corporation/OptiX SDK 6.5.0"
 		"C:/ProgramData/NVIDIA Corporation/OptiX SDK 6.0.0"

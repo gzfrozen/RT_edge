@@ -21,7 +21,7 @@ set(CMAKE_MODULE_PATH
   )
 
 find_package(CUDA REQUIRED)
-find_package(OptiX REQUIRED VERSION 7.0)
+find_package(OptiX REQUIRED VERSION 7.1)
 
 #include_directories(${CUDA_TOOLKIT_INCLUDE}, ${OptiX_INCLUDE})
 if (CUDA_TOOLKIT_ROOT_DIR)

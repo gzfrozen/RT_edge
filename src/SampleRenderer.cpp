@@ -347,8 +347,8 @@ void SampleRenderer::createModule()
   pipelineCompileOptions.numAttributeValues = 2;
   pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
   pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";
+  pipelineCompileOptions.usesPrimitiveTypeFlags = OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE;
 
-  pipelineLinkOptions.overrideUsesMotionBlur = false;
   pipelineLinkOptions.maxTraceDepth = 2;
 
   const std::string ptxCode = reinterpret_cast<const char *>(devicePrograms);

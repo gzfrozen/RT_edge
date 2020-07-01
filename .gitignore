@@ -11,3 +11,5 @@ models
 *.png
 .vscode
 **embedded_objs.cpp
+out
+.vs
