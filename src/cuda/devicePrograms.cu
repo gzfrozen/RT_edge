@@ -226,11 +226,28 @@ extern "C" __global__ void __raygen__renderFrame()
     vec3f pixelColor = 0.f;
     for (int sampleID = 0; sampleID < numPixelSamples; sampleID++)
     {
-        // normalized screen plane position, in [0,1]^2
-        const vec2f screen(vec2f(ix + prd.random(), iy + prd.random()) / vec2f(optixLaunchParams.frame.size));
+        vec3f rayDir;
+        if (optixLaunchParams.camera.camera_type == PINHOLE)
+        {
+            // normalized screen plane position, in [0,1]^2
+            const vec2f screen(vec2f(ix + prd.random() - 0.5, iy + prd.random() - 0.5) / vec2f(optixLaunchParams.frame.size));
 
-        // generate ray direction
-        vec3f rayDir = normalize(camera.direction + (screen.x - 0.5f) * camera.horizontal + (screen.y - 0.5f) * camera.vertical);
+            // generate ray direction
+            rayDir = normalize(camera.direction + (screen.x - 0.5f) * camera.horizontal + (screen.y - 0.5f) * camera.vertical);
+        }
+        else if (optixLaunchParams.camera.camera_type == ENV)
+        {
+            // sperical coordinate position
+            const vec3f spherical_position((ix + prd.random()) * camera.horizontal + (iy + prd.random()) * camera.vertical);
+            const float radius = length(camera.direction);
+            // change into xyz coordinate position
+            const vec3f xyz_position(
+                radius * sin(spherical_position.y) * sin(spherical_position.z),
+                -radius * cos(spherical_position.z),
+                radius * cos(spherical_position.y) * sin(spherical_position.z));
+            // generate ray direction
+            rayDir = normalize(xyz_position);
+        }
 
         optixTrace(optixLaunchParams.traversable,
                    camera.position,

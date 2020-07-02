@@ -29,6 +29,12 @@ enum
     RAY_TYPE_COUNT
 };
 
+typedef enum camera_type
+{
+    PINHOLE,
+    ENV
+} camera_type;
+
 struct TriangleMeshSBTData
 {
     vec3f color;
@@ -51,6 +57,7 @@ struct LaunchParams
 
     struct
     {
+        int camera_type;
         vec3f position;
         vec3f direction;
         vec3f horizontal;

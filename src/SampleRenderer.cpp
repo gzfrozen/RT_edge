@@ -17,6 +17,7 @@
 #include "SampleRenderer.hpp"
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
+#define PI 3.1415926535897932384626433832795
 
 extern "C" const unsigned char devicePrograms[];
 
@@ -626,6 +627,7 @@ void SampleRenderer::render()
 /*! set camera to render with */
 void SampleRenderer::setCamera(const Camera &camera)
 {
+  launchParams.camera.camera_type = PINHOLE;
   lastSetCamera = camera;
   launchParams.camera.position = camera.from;
   launchParams.camera.direction = normalize(camera.at - camera.from);
@@ -634,6 +636,19 @@ void SampleRenderer::setCamera(const Camera &camera)
   launchParams.camera.horizontal = cosFovy * aspect * normalize(cross(launchParams.camera.direction, camera.up));
   launchParams.camera.vertical = cosFovy * normalize(cross(launchParams.camera.horizontal,
                                                            launchParams.camera.direction));
+}
+
+/*! set sphere camera to render with */
+void SampleRenderer::setEnvCamera(const Env_camera &camera)
+{
+  launchParams.camera.camera_type = ENV;
+  lastSetEnvCamera = camera;
+  launchParams.camera.position = camera.center;
+  launchParams.camera.direction = normalize(camera.unit_vector - camera.center);
+  const float unit_theta = 2 * PI / float(launchParams.frame.size.x);
+  const float unit_phi = PI / float(launchParams.frame.size.y);
+  launchParams.camera.horizontal = vec3f(0., unit_theta, 0.);
+  launchParams.camera.vertical = vec3f(0., 0., unit_phi);
 }
 
 /*! resize frame buffer to given resolution */

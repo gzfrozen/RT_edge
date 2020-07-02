@@ -25,10 +25,11 @@ struct SampleWindow : public GLFCameraWindow
     SampleWindow(const std::string &title,
                  const Model *model,
                  const Camera &camera,
+                 const Env_camera &env_camera,
                  const QuadLight &light,
                  const float worldScale)
         : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale),
-          sample(model, light)
+          sample(model, light), env_camera(env_camera)
     {
     }
 
@@ -36,9 +37,10 @@ struct SampleWindow : public GLFCameraWindow
     {
         if (cameraFrame.modified)
         {
-            sample.setCamera(Camera{cameraFrame.get_from(),
-                                    cameraFrame.get_at(),
-                                    cameraFrame.get_up()});
+            // sample.setCamera(Camera{cameraFrame.get_from(),
+            //                         cameraFrame.get_at(),
+            //                         cameraFrame.get_up()});
+            sample.setEnvCamera(Env_camera{env_camera.center, env_camera.unit_vector});
             cameraFrame.modified = false;
         }
         sample.render();
@@ -103,6 +105,7 @@ struct SampleWindow : public GLFCameraWindow
     GLuint fbTexture{0};
     SampleRenderer sample;
     std::vector<uint32_t> pixels;
+    Env_camera env_camera;
 };
 
 /*! main entry point to this example - initially optix, print hello
@@ -115,6 +118,8 @@ extern "C" int main(int ac, char **av)
         Camera camera = {/*from*/ vec3f(-1293.07f, 154.681f, -0.7304f),
                          /* at */ model->bounds.center() - vec3f(0, 400, 0),
                          /* up */ vec3f(0.f, 1.f, 0.f)};
+        Env_camera env_camera = {vec3f(-1293.07f, 154.681f, -0.7304f),
+                                 model->bounds.center() - vec3f(0, 400, 0)};
 
         // some simple, hard-coded light ... obviously, only works for sponza
         const float light_size = 200.f;
@@ -128,7 +133,7 @@ extern "C" int main(int ac, char **av)
         const float worldScale = length(model->bounds.span());
 
         SampleWindow *window = new SampleWindow("Optix 7 Example",
-                                                model, camera, light, worldScale);
+                                                model, camera, env_camera, light, worldScale);
         window->run();
     }
     catch (std::runtime_error &e)

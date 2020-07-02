@@ -31,13 +31,13 @@ struct Camera
   vec3f up;
 };
 
-/* An spherical camera */
+/* An spherical camera using spherical coordinate system r,θ,φ */
 struct Env_camera
 {
   /*! camera position - *center* of the camera sphere */
   vec3f center;
-  /*! *radius* of the camera sphere */
-  vec3f radius;
+  /*! which point of r,0,0 */
+  vec3f unit_vector;
 };
 
 /*! a sample OptiX-7 renderer that demonstrates how to set up
@@ -65,6 +65,9 @@ public:
 
   /*! set camera to render with */
   void setCamera(const Camera &camera);
+
+  /*! set sphere camera to render with */
+  void setEnvCamera(const Env_camera &camera);
 
 protected:
   // ------------------------------------------------------------------
@@ -146,6 +149,9 @@ protected:
 
   /*! the camera we are to render with. */
   Camera lastSetCamera;
+
+  /*! the sphere camera we are to render with. */
+  Env_camera lastSetEnvCamera;
 
   /*! the model we are going to trace rays against */
   const Model *model;
