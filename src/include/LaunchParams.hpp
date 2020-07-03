@@ -17,6 +17,7 @@
 #pragma once
 
 #include "gdt/math/vec.h"
+#include "gdt/math/LinearSpace.h"
 #include "optix7.hpp"
 
 using namespace gdt;
@@ -60,8 +61,10 @@ struct LaunchParams
         int camera_type;
         vec3f position;
         vec3f direction;
+        vec3f spherical_direction; // direction in r,theta,phi
         vec3f horizontal;
         vec3f vertical;
+        linear3f view_martrix;
     } camera;
 
     struct

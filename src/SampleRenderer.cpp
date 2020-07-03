@@ -17,7 +17,8 @@
 #include "SampleRenderer.hpp"
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
-#define PI 3.1415926535897932384626433832795
+
+#include "MathFunction.hpp"
 
 extern "C" const unsigned char devicePrograms[];
 
@@ -639,16 +640,22 @@ void SampleRenderer::setCamera(const Camera &camera)
 }
 
 /*! set sphere camera to render with */
-void SampleRenderer::setEnvCamera(const Env_camera &camera)
+void SampleRenderer::setEnvCamera(const Camera &camera)
 {
   launchParams.camera.camera_type = ENV;
-  lastSetEnvCamera = camera;
-  launchParams.camera.position = camera.center;
-  launchParams.camera.direction = normalize(camera.unit_vector - camera.center);
-  const float unit_theta = 2 * PI / float(launchParams.frame.size.x);
-  const float unit_phi = PI / float(launchParams.frame.size.y);
-  launchParams.camera.horizontal = vec3f(0., unit_theta, 0.);
-  launchParams.camera.vertical = vec3f(0., 0., unit_phi);
+  lastSetCamera = camera;
+  launchParams.camera.position = camera.from;
+  const vec3f direction = camera.at - camera.from;
+  launchParams.camera.direction = normalize(direction);
+  launchParams.camera.spherical_direction = normal_to_sphere(direction);
+  const float unit_theta = 2 * M_PI / float(launchParams.frame.size.x);
+  const float unit_phi = M_PI / float(launchParams.frame.size.y);
+  launchParams.camera.horizontal = {0.f, unit_theta, 0.f};
+  launchParams.camera.vertical = {0.f, 0.f, unit_phi};
+  const vec3f &u = launchParams.camera.direction;
+  const vec3f v = cross(camera.up, u);
+  const vec3f w = cross(u, v);
+  launchParams.camera.view_martrix = linear3f(u, v, w);
 }
 
 /*! resize frame buffer to given resolution */

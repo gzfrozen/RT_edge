@@ -19,6 +19,7 @@
 
 #include "LaunchParams.hpp"
 #include "gdt/random/random.h"
+#include "MathFunction.hpp"
 
 #define NUM_LIGHT_SAMPLES 1
 #define NUM_PIXEL_SAMPLES 16
@@ -230,7 +231,7 @@ extern "C" __global__ void __raygen__renderFrame()
         if (optixLaunchParams.camera.camera_type == PINHOLE)
         {
             // normalized screen plane position, in [0,1]^2
-            const vec2f screen(vec2f(ix + prd.random() - 0.5, iy + prd.random() - 0.5) / vec2f(optixLaunchParams.frame.size));
+            const vec2f screen(vec2f(ix + prd.random() - 0.5f, iy + prd.random() - 0.5f) / vec2f(optixLaunchParams.frame.size));
 
             // generate ray direction
             rayDir = normalize(camera.direction + (screen.x - 0.5f) * camera.horizontal + (screen.y - 0.5f) * camera.vertical);
@@ -238,15 +239,14 @@ extern "C" __global__ void __raygen__renderFrame()
         else if (optixLaunchParams.camera.camera_type == ENV)
         {
             // sperical coordinate position
-            const vec3f spherical_position((ix + prd.random()) * camera.horizontal + (iy + prd.random()) * camera.vertical);
-            const float radius = length(camera.direction);
+            vec3f spherical_position((ix + prd.random() - 0.5f) * camera.horizontal + (iy + prd.random() - 0.5f) * camera.vertical);
+            spherical_position += camera.spherical_direction - vec3f(0.f, M_PI, M_PI / 2);
             // change into xyz coordinate position
-            const vec3f xyz_position(
-                radius * sin(spherical_position.y) * sin(spherical_position.z),
-                -radius * cos(spherical_position.z),
-                radius * cos(spherical_position.y) * sin(spherical_position.z));
-            // generate ray direction
-            rayDir = normalize(xyz_position);
+            const vec3f xyz_position(sphere_to_normal(spherical_position));
+            // view port transform
+            rayDir = {dot(camera.view_martrix.vx, xyz_position),
+                      dot(camera.view_martrix.vy, xyz_position),
+                      dot(camera.view_martrix.vz, xyz_position)};
         }
 
         optixTrace(optixLaunchParams.traversable,
