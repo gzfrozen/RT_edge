@@ -27,6 +27,11 @@ include_directories(${PROJECT_SOURCE_DIR}/support/3rdParty/)
 # ------------------------------------------------------------------
 # build glfw
 # ------------------------------------------------------------------
+# Setting directories
+set(EM_SRC_DIR ${PROJECT_SOURCE_DIR}/src CACHE PATH "Project source directory")
+set(EM_INCLUDE_DIR ${EM_SRC_DIR}/include CACHE PATH "Header file directory")
+set(EM_CUDA_DIR ${EM_SRC_DIR}/cuda CACHE PATH "CUDA file directory")
+
 set(OpenGL_GL_PREFERENCE LEGACY)
 if (WIN32)
   set(glfw_dir ${PROJECT_SOURCE_DIR}/support/3rdParty/glfw/)
@@ -37,11 +42,6 @@ else()
 endif()
 include_directories(${PROJECT_SOURCE_DIR}/support/glfWindow)
 add_subdirectory(${PROJECT_SOURCE_DIR}/support/glfWindow EXCLUDE_FROM_ALL)
-
-# Setting directories
-set(EM_SRC_DIR ${PROJECT_SOURCE_DIR}/src CACHE PATH "Project source directory")
-set(EM_INCLUDE_DIR ${EM_SRC_DIR}/include CACHE PATH "Header file directory")
-set(EM_CUDA_DIR ${EM_SRC_DIR}/cuda CACHE PATH "CUDA file directory")
 
 # PTX Generation
 add_library(CudaPTX OBJECT ${EM_CUDA_DIR}/devicePrograms.cu)

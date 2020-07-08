@@ -19,6 +19,7 @@
 #include "gdt/math/vec.h"
 #include "gdt/math/LinearSpace.h"
 #include "optix7.hpp"
+#include "CameraType.hpp"
 
 using namespace gdt;
 
@@ -29,12 +30,6 @@ enum
     SHADOW_RAY_TYPE,
     RAY_TYPE_COUNT
 };
-
-typedef enum camera_type
-{
-    PINHOLE,
-    ENV
-} camera_type;
 
 struct TriangleMeshSBTData
 {

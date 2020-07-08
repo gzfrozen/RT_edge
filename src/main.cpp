@@ -36,12 +36,19 @@ struct SampleWindow : public GLFCameraWindow
     {
         if (cameraFrame.modified)
         {
-            // sample.setCamera(Camera{cameraFrame.get_from(),
-            //                         cameraFrame.get_at(),
-            //                         cameraFrame.get_up()});
-            sample.setEnvCamera(Camera{cameraFrame.get_from(),
-                                       cameraFrame.get_at(),
-                                       cameraFrame.get_up()});
+            int cameraType = cameraFrame.get_camera_type();
+            if (cameraType == PINHOLE)
+            {
+                sample.setCamera(Camera{cameraFrame.get_from(),
+                                        cameraFrame.get_at(),
+                                        cameraFrame.get_up()});
+            }
+            else if (cameraType == ENV)
+            {
+                sample.setEnvCamera(Camera{cameraFrame.get_from(),
+                                           cameraFrame.get_at(),
+                                           cameraFrame.get_up()});
+            }
             cameraFrame.modified = false;
         }
         sample.render();

@@ -22,6 +22,8 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include "CameraType.hpp"
+
 using namespace gdt;
 
 struct GLFWindow
@@ -147,6 +149,7 @@ struct CameraFrame
   inline vec3f get_from() const { return position; }
   inline vec3f get_at() const { return getPOI(); }
   inline vec3f get_up() const { return upVector; }
+  inline int get_camera_type() const { return cameraType; }
 
   linear3f frame{one};
   vec3f position{0, -1, 0};
@@ -168,6 +171,7 @@ struct CameraFrame
       it's easiest to attach it to the camera here ...*/
   float motionSpeed{1.f};
 
+  int cameraType{PINHOLE};
   /*! gets set to true every time a manipulator changes the camera
       values */
   bool modified{true};
@@ -190,6 +194,18 @@ struct CameraFrameManip
 
     switch (key)
     {
+    case 'p':
+    case 'P':
+      fc.cameraType = PINHOLE;
+      fc.modified = true;
+      std::cout << "Using pinhole camera" << std::endl;
+      break;
+    case 'l':
+    case 'L':
+      fc.cameraType = ENV;
+      fc.modified = true;
+      std::cout << "Using sphere camera" << std::endl;
+      break;
     case '+':
     case '=':
       fc.motionSpeed *= 1.5f;
@@ -200,6 +216,7 @@ struct CameraFrameManip
       fc.motionSpeed /= 1.5f;
       std::cout << "# viewer: new motion speed is " << fc.motionSpeed << std::endl;
       break;
+    case 'c':
     case 'C':
       std::cout << "(C)urrent camera:" << std::endl;
       std::cout << "- from :" << fc.position << std::endl;
