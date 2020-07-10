@@ -56,10 +56,9 @@ struct LaunchParams
         int camera_type;
         vec3f position;
         vec3f direction;
-        vec3f spherical_direction; // direction in r,theta,phi
         vec3f horizontal;
         vec3f vertical;
-        linear3f view_martrix;
+        linear3f matrix;
     } camera;
 
     struct

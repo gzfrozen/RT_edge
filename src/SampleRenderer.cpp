@@ -647,7 +647,6 @@ void SampleRenderer::setEnvCamera(const Camera &camera)
   launchParams.camera.position = camera.from;
   const vec3f direction = camera.at - camera.from;
   launchParams.camera.direction = normalize(direction);
-  launchParams.camera.spherical_direction = normal_to_sphere(direction);
   const float unit_theta = 2 * M_PI / float(launchParams.frame.size.x);
   const float unit_phi = M_PI / float(launchParams.frame.size.y);
   launchParams.camera.horizontal = {0.f, unit_theta, 0.f};
@@ -655,12 +654,15 @@ void SampleRenderer::setEnvCamera(const Camera &camera)
   const vec3f &u = launchParams.camera.direction;
   const vec3f v = cross(camera.up, u);
   const vec3f w = cross(u, v);
-  launchParams.camera.view_martrix = linear3f(u, v, w);
+  launchParams.camera.matrix = linear3f(u, v, w);
 }
 
 /*! resize frame buffer to given resolution */
 void SampleRenderer::resize(const vec2i &newSize)
 {
+  // if window minimized
+  if (newSize.x == 0 | newSize.y == 0)
+    return;
   // resize our cuda frame buffer
   colorBuffer.resize(newSize.x * newSize.y * sizeof(uint32_t));
 

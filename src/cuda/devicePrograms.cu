@@ -240,13 +240,13 @@ extern "C" __global__ void __raygen__renderFrame()
         {
             // sperical coordinate position
             vec3f spherical_position((ix + prd.random() - 0.5f) * camera.horizontal + (iy + prd.random() - 0.5f) * camera.vertical);
-            spherical_position += camera.spherical_direction - vec3f(0.f, M_PI, M_PI / 2);
+            spherical_position -= vec3f(0.f, M_PI, 0.f);
             // change into xyz coordinate position
             const vec3f xyz_position(sphere_to_normal(spherical_position));
             // view port transform
-            rayDir = {dot(camera.view_martrix.vx, xyz_position),
-                      dot(camera.view_martrix.vy, xyz_position),
-                      dot(camera.view_martrix.vz, xyz_position)};
+            rayDir = {dot(camera.matrix.vx, xyz_position),
+                      dot(camera.matrix.vy, xyz_position),
+                      dot(camera.matrix.vz, xyz_position)};
         }
 
         optixTrace(optixLaunchParams.traversable,
