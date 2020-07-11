@@ -32,6 +32,14 @@ struct SampleWindow : public GLFCameraWindow
     {
     }
 
+    inline Camera get_camera() const
+    {
+        return Camera{cameraFrame.get_from(),
+                      cameraFrame.get_at(),
+                      cameraFrame.get_up(),
+                      cameraFrame.get_frame()};
+    }
+
     virtual void render() override
     {
         if (cameraFrame.modified)
@@ -39,15 +47,11 @@ struct SampleWindow : public GLFCameraWindow
             int cameraType = cameraFrame.get_camera_type();
             if (cameraType == PINHOLE)
             {
-                sample.setCamera(Camera{cameraFrame.get_from(),
-                                        cameraFrame.get_at(),
-                                        cameraFrame.get_up()});
+                sample.setCamera(get_camera());
             }
             else if (cameraType == ENV)
             {
-                sample.setEnvCamera(Camera{cameraFrame.get_from(),
-                                           cameraFrame.get_at(),
-                                           cameraFrame.get_up()});
+                sample.setEnvCamera(get_camera());
             }
             cameraFrame.modified = false;
         }

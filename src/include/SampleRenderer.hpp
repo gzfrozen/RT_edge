@@ -29,6 +29,8 @@ struct Camera
   vec3f at;
   /*! general up-vector */
   vec3f up;
+  /*! camera view matrix */
+  linear3f matrix;
 };
 
 /*! a sample OptiX-7 renderer that demonstrates how to set up

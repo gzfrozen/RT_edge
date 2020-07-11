@@ -651,10 +651,9 @@ void SampleRenderer::setEnvCamera(const Camera &camera)
   const float unit_phi = M_PI / float(launchParams.frame.size.y);
   launchParams.camera.horizontal = {0.f, unit_theta, 0.f};
   launchParams.camera.vertical = {0.f, 0.f, unit_phi};
-  const vec3f &u = launchParams.camera.direction;
-  const vec3f v = cross(camera.up, u);
-  const vec3f w = cross(u, v);
-  launchParams.camera.matrix = linear3f(u, v, w);
+  launchParams.camera.matrix = linear3f{-camera.matrix.vz,
+                                        -camera.matrix.vx,
+                                        camera.matrix.vy};
 }
 
 /*! resize frame buffer to given resolution */

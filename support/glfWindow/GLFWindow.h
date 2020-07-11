@@ -149,6 +149,7 @@ struct CameraFrame
   inline vec3f get_from() const { return position; }
   inline vec3f get_at() const { return getPOI(); }
   inline vec3f get_up() const { return upVector; }
+  inline linear3f get_frame() const { return frame; }
   inline int get_camera_type() const { return cameraType; }
 
   linear3f frame{one};
