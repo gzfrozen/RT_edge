@@ -72,6 +72,10 @@ static void glfwindow_key_cb(GLFWwindow *window, int key, int scancode, int acti
   {
     gw->key(key, mods);
   }
+  if (action == GLFW_RELEASE)
+  {
+    gw->key_release(key, mods);
+  }
 }
 
 /*! callback for _moving_ the mouse to a new position */
@@ -106,6 +110,7 @@ void GLFWindow::run()
 
   while (!glfwWindowShouldClose(handle))
   {
+    before_render();
     render();
     draw();
 

@@ -45,6 +45,10 @@ struct GLFWindow
   {
   }
 
+  virtual void key_release(int key, int mods)
+  {
+  }
+
   /*! callback that window got resized */
   virtual void mouseMotion(const vec2i &newPos)
   {
@@ -66,6 +70,12 @@ struct GLFWindow
       this a separate function so render() can focus on optix
       rendering, and now have to deal with opengl pixel copies
       etc */
+
+  /*! if things need to be done before render */
+  virtual void before_render()
+  { /* empty - to be subclassed by user */
+  }
+
   virtual void render()
   { /* empty - to be subclassed by user */
   }
@@ -82,7 +92,7 @@ struct GLFWindow
 struct CameraFrame
 {
   CameraFrame(const float worldScale)
-      : motionSpeed(worldScale)
+      : motionSpeed(worldScale), moveSpeed(worldScale)
   {
   }
 
@@ -172,7 +182,12 @@ struct CameraFrame
       it's easiest to attach it to the camera here ...*/
   float motionSpeed{1.f};
 
+  /*! multiplier how fast the camera should move when pressing w,s,a,d */
+  float moveSpeed{1.f};
+
+  /*! camera type: PINHOLE or ENV */
   int cameraType{PINHOLE};
+
   /*! gets set to true every time a manipulator changes the camera
       values */
   bool modified{true};
@@ -195,27 +210,47 @@ struct CameraFrameManip
 
     switch (key)
     {
-    case 'p':
-    case 'P':
-      fc.cameraType = PINHOLE;
-      fc.modified = true;
-      std::cout << "Using pinhole camera" << std::endl;
+    case 'w':
+    case 'W':
+      forward = true;
       break;
-    case 'l':
-    case 'L':
-      fc.cameraType = ENV;
-      fc.modified = true;
-      std::cout << "Using sphere camera" << std::endl;
+    case 's':
+    case 'S':
+      backward = true;
+      break;
+    case 'a':
+    case 'A':
+      left = true;
+      break;
+    case 'd':
+    case 'D':
+      right = true;
       break;
     case '+':
     case '=':
-      fc.motionSpeed *= 1.5f;
-      std::cout << "# viewer: new motion speed is " << fc.motionSpeed << std::endl;
+      if (mods == GLFW_MOD_ALT)
+      {
+        fc.moveSpeed *= 1.5f;
+        std::cout << "# viewer: new move speed is " << fc.moveSpeed << std::endl;
+      }
+      else
+      {
+        fc.motionSpeed *= 1.5f;
+        std::cout << "# viewer: new motion speed is " << fc.motionSpeed << std::endl;
+      }
       break;
     case '-':
     case '_':
-      fc.motionSpeed /= 1.5f;
-      std::cout << "# viewer: new motion speed is " << fc.motionSpeed << std::endl;
+      if (mods == GLFW_MOD_ALT)
+      {
+        fc.moveSpeed /= 1.5f;
+        std::cout << "# viewer: new move speed is " << fc.moveSpeed << std::endl;
+      }
+      else
+      {
+        fc.motionSpeed /= 1.5f;
+        std::cout << "# viewer: new motion speed is " << fc.motionSpeed << std::endl;
+      }
       break;
     case 'c':
     case 'C':
@@ -242,6 +277,32 @@ struct CameraFrameManip
     }
   }
 
+  virtual void key_release(int key, int mods)
+  {
+    // CameraFrame &fc = *cameraFrame;
+    switch (key)
+    {
+    case 'w':
+    case 'W':
+      forward = false;
+      break;
+    case 's':
+    case 'S':
+      backward = false;
+      break;
+    case 'a':
+    case 'A':
+      left = false;
+      break;
+    case 'd':
+    case 'D':
+      right = false;
+      break;
+    default:
+      break;
+    }
+  }
+
   virtual void strafe(const vec3f &howMuch)
   {
     cameraFrame->position += howMuch;
@@ -256,6 +317,17 @@ struct CameraFrameManip
   virtual void move(const float step) = 0;
   virtual void rotate(const float dx, const float dy) = 0;
 
+  virtual void move_forward(const float step)
+  {
+    cameraFrame->position -= step * cameraFrame->frame.vz;
+    cameraFrame->modified = true;
+  }
+
+  virtual void move_right(const float step)
+  {
+    cameraFrame->position += step * cameraFrame->frame.vx;
+    cameraFrame->modified = true;
+  }
   // /*! this gets called when the user presses a key on the keyboard ... */
   // virtual void special(int key, const vec2i &where) { };
 
@@ -281,6 +353,19 @@ struct CameraFrameManip
     move(delta.y * pixels_per_move * cameraFrame->motionSpeed);
   }
 
+  /*! camera movement when pressing w,s,a,d */
+  virtual void move_wsad()
+  {
+    if (forward)
+      move_forward(distance_per_move * cameraFrame->moveSpeed);
+    if (backward)
+      move_forward(-distance_per_move * cameraFrame->moveSpeed);
+    if (left)
+      move_right(-distance_per_move * cameraFrame->moveSpeed);
+    if (right)
+      move_right(distance_per_move * cameraFrame->moveSpeed);
+  }
+
   // /*! mouse button got either pressed or released at given location */
   // virtual void mouseButtonLeft  (const vec2i &where, bool pressed) {}
 
@@ -295,6 +380,10 @@ protected:
   const float kbd_rotate_degrees{10.f};
   const float degrees_per_drag_fraction{150.f};
   const float pixels_per_move{10.f};
+  const float distance_per_move{1.f / 50.f};
+
+  /*! indicators of w,s,a,d pressing status*/
+  bool forward = false, backward = false, left = false, right = false;
 };
 
 struct GLFCameraWindow : public GLFWindow
@@ -323,10 +412,29 @@ struct GLFCameraWindow : public GLFWindow
   // virtual void resize(const vec2i &newSize)
   // { /* empty - to be subclassed by user */ }
 
+  virtual void before_render() override
+  {
+    if (cameraFrameManip)
+      cameraFrameManip->move_wsad();
+    return;
+  }
+
   virtual void key(int key, int mods) override
   {
     switch (key)
     {
+    case 'p':
+    case 'P':
+      cameraFrame.cameraType = PINHOLE;
+      cameraFrame.modified = true;
+      std::cout << "Using pinhole camera" << std::endl;
+      break;
+    case 'l':
+    case 'L':
+      cameraFrame.cameraType = ENV;
+      cameraFrame.modified = true;
+      std::cout << "Using sphere camera" << std::endl;
+      break;
     case 'f':
     case 'F':
       std::cout << "Entering 'fly' mode" << std::endl;
@@ -342,6 +450,16 @@ struct GLFCameraWindow : public GLFWindow
     default:
       if (cameraFrameManip)
         cameraFrameManip->key(key, mods);
+    }
+  }
+
+  virtual void key_release(int key, int mods) override
+  {
+    switch (key)
+    {
+    default:
+      if (cameraFrameManip)
+        cameraFrameManip->key_release(key, mods);
     }
   }
 
