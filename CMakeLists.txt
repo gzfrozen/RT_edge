@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.18)
 project(EM_tracing LANGUAGES CXX CUDA)
 
 if (MSVC)
@@ -58,8 +58,8 @@ target_link_libraries(CudaPTX
 # will also build with -std=c++14
 target_compile_features(CudaPTX PRIVATE cxx_std_14)
 
-# Set your GPU architecture
-target_compile_options(CudaPTX PRIVATE -arch=compute_75 --use_fast_math)
+# Cuda compile options
+target_compile_options(CudaPTX PRIVATE --use_fast_math)
 
 # We need to explicitly state that we need all CUDA files to be compiled into 
 # PTX files, and built with -dc as the member functions could be called by
@@ -67,6 +67,7 @@ target_compile_options(CudaPTX PRIVATE -arch=compute_75 --use_fast_math)
 set_target_properties(CudaPTX PROPERTIES 
   CUDA_PTX_COMPILATION ON 
   POSITION_INDEPENDENT_CODE ON 
+  CUDA_ARCHITECTURES 75-real # Set your GPU architecture (important)
   )
 
 # Precompile headers setting
