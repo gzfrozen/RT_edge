@@ -3,7 +3,7 @@
 #include "gdt/math/vec.h"
 
 /* change spherical vector into normalized xyz vector*/
-__host__ __device__ inline vec3f sphere_to_normal(const vec3f &sphere_direction)
+__forceinline__ __host__ __device__ vec3f sphere_to_normal(const vec3f &sphere_direction)
 {
     const float &theta = sphere_direction.y;
     const float &phi = sphere_direction.z;
@@ -13,7 +13,7 @@ __host__ __device__ inline vec3f sphere_to_normal(const vec3f &sphere_direction)
 }
 
 /* change xyz vector into spherical vector with 0 length */
-__host__ __device__ inline vec3f normal_to_sphere(const vec3f &xyz_direction)
+__forceinline__ __host__ __device__ vec3f normal_to_sphere(const vec3f &xyz_direction)
 {
     float theta = atan(xyz_direction.y / xyz_direction.x);
     float phi = acos(xyz_direction.z / length(xyz_direction));

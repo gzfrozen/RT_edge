@@ -20,7 +20,11 @@
 
 #include "MathFunction.hpp"
 
-extern "C" const unsigned char devicePrograms[];
+// extern ptx code, same name as the file in src/cuda
+extern "C" const unsigned char rayLaunch[];
+extern "C" const unsigned char environmentRender[];
+extern "C" const unsigned char phaseDetection[];
+extern "C" const unsigned char closestHit[];
 
 /*! SBT record for a raygen program */
 struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecord
@@ -334,11 +338,11 @@ void SampleRenderer::createContext()
 }
 
 /*! creates the module that contains all the programs we are going
-      to use. in this simple example, we use a single module from a
-      single .cu file, using a single embedded ptx string */
+      to use. we use modules from multiple .cu files, came from 
+      multiple embedded ptx string which need to be loaded manually*/
 void SampleRenderer::createModule()
 {
-  moduleCompileOptions.maxRegisterCount = 50;
+  moduleCompileOptions.maxRegisterCount = OPTIX_COMPILE_DEFAULT_MAX_REGISTER_COUNT;
   moduleCompileOptions.optLevel = OPTIX_COMPILE_OPTIMIZATION_DEFAULT;
   moduleCompileOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE;
 
@@ -353,19 +357,30 @@ void SampleRenderer::createModule()
 
   pipelineLinkOptions.maxTraceDepth = 2;
 
-  const std::string ptxCode = reinterpret_cast<const char *>(devicePrograms);
+  // load each ptx code manually
+  static std::unordered_map<std::string, const unsigned char *> ptxCode;
+  ptxCode["rayLaunch"] = rayLaunch;
+  ptxCode["environmentRender"] = environmentRender;
+  ptxCode["closestHit"] = closestHit;
+  // ptxCode["phaseDetection"] = phaseDetection;
 
-  char log[2048];
-  size_t sizeof_log = sizeof(log);
-  OPTIX_CHECK(optixModuleCreateFromPTX(optixContext,
-                                       &moduleCompileOptions,
-                                       &pipelineCompileOptions,
-                                       ptxCode.c_str(),
-                                       ptxCode.size(),
-                                       log, &sizeof_log,
-                                       &module));
-  if (sizeof_log > 1)
-    PRINT(log);
+  for (auto i : ptxCode)
+  {
+    const std::string ptx = reinterpret_cast<const char *>(i.second);
+    char log[2048];
+    size_t sizeof_log = sizeof(log);
+    OptixModule m;
+    OPTIX_CHECK(optixModuleCreateFromPTX(optixContext,
+                                         &moduleCompileOptions,
+                                         &pipelineCompileOptions,
+                                         ptx.c_str(),
+                                         ptx.size(),
+                                         log, &sizeof_log,
+                                         &m));
+    if (sizeof_log > 1)
+      PRINT(log);
+    module[i.first] = m;
+  }
 }
 
 /*! does all setup for the raygen program(s) we are going to use */
@@ -377,7 +392,7 @@ void SampleRenderer::createRaygenPrograms()
   OptixProgramGroupOptions pgOptions = {};
   OptixProgramGroupDesc pgDesc = {};
   pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
-  pgDesc.raygen.module = module;
+  pgDesc.raygen.module = module["rayLaunch"];
   pgDesc.raygen.entryFunctionName = "__raygen__renderFrame";
 
   // OptixProgramGroup raypg;
@@ -404,7 +419,7 @@ void SampleRenderer::createMissPrograms()
   OptixProgramGroupOptions pgOptions = {};
   OptixProgramGroupDesc pgDesc = {};
   pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
-  pgDesc.miss.module = module;
+  pgDesc.miss.module = module["environmentRender"];
 
   // ------------------------------------------------------------------
   // radiance rays
@@ -449,8 +464,8 @@ void SampleRenderer::createHitgroupPrograms()
   OptixProgramGroupOptions pgOptions = {};
   OptixProgramGroupDesc pgDesc = {};
   pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-  pgDesc.hitgroup.moduleCH = module;
-  pgDesc.hitgroup.moduleAH = module;
+  pgDesc.hitgroup.moduleCH = module["closestHit"];
+  pgDesc.hitgroup.moduleAH = module["environmentRender"];
 
   // -------------------------------------------------------
   // radiance rays

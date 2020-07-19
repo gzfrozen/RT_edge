@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <unordered_map>
 // our own classes, partly shared between host and device
 #include "CUDABuffer.hpp"
 #include "LaunchParams.hpp"
@@ -118,7 +119,7 @@ protected:
   /*! @} */
 
   /*! @{ the module that contains out device programs */
-  OptixModule module;
+  std::unordered_map<std::string, OptixModule> module;
   OptixModuleCompileOptions moduleCompileOptions;
   /* @} */
 
