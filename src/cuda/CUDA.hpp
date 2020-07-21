@@ -6,8 +6,10 @@
 #include "LaunchParams.hpp"
 #include "gdt/random/random.h"
 
-#define NUM_LIGHT_SAMPLES 1
-#define NUM_PIXEL_SAMPLES 16
+#define NUM_LIGHT_SAMPLES 16
+#define NUM_PIXEL_SAMPLES 1
+
+#define WAVE_LENGTH 100.f
 
 /*! launch parameters in constant memory, filled in by optix upon
     optixLaunch (this gets filled in from the buffer we pass to

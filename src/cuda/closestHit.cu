@@ -16,6 +16,81 @@
 
 #include "CUDA.hpp"
 
+typedef struct
+{
+    float r; // a fraction between 0 and 1
+    float g; // a fraction between 0 and 1
+    float b; // a fraction between 0 and 1
+} RGB;
+
+typedef struct
+{
+    float h; // angle in degrees
+    float s; // a fraction between 0 and 1
+    float v; // a fraction between 0 and 1
+} HSV;
+
+__forceinline__ __host__ __device__ RGB hsv2rgb(const HSV &in)
+{
+    float hh, p, q, t, ff;
+    int i;
+    RGB out;
+
+    if (in.s <= 0.0)
+    { // < is bogus, just shuts up warnings
+        out.r = in.v;
+        out.g = in.v;
+        out.b = in.v;
+        return out;
+    }
+    hh = in.h;
+    if (hh >= 360.0)
+        hh = 0.0;
+    hh /= 60.0;
+    i = (int)hh;
+    ff = hh - i;
+    p = in.v * (1.0 - in.s);
+    q = in.v * (1.0 - (in.s * ff));
+    t = in.v * (1.0 - (in.s * (1.0 - ff)));
+
+    switch (i)
+    {
+    case 0:
+        out.r = in.v;
+        out.g = t;
+        out.b = p;
+        break;
+    case 1:
+        out.r = q;
+        out.g = in.v;
+        out.b = p;
+        break;
+    case 2:
+        out.r = p;
+        out.g = in.v;
+        out.b = t;
+        break;
+
+    case 3:
+        out.r = p;
+        out.g = q;
+        out.b = in.v;
+        break;
+    case 4:
+        out.r = t;
+        out.g = p;
+        out.b = in.v;
+        break;
+    case 5:
+    default:
+        out.r = in.v;
+        out.g = p;
+        out.b = q;
+        break;
+    }
+    return out;
+}
+
 //------------------------------------------------------------------------------
 // closest hit and anyhit programs for radiance-type rays.
 //
@@ -125,4 +200,56 @@ extern "C" __global__ void __closesthit__radiance()
 extern "C" __global__ void __closesthit__shadow()
 {
     /* not going to be used ... */
+}
+
+extern "C" __global__ void __closesthit__phase()
+{
+    const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *)optixGetSbtDataPointer();
+    PRD &prd = *getPRD<PRD>();
+
+    // ------------------------------------------------------------------
+    // phase and color calculation
+    // ------------------------------------------------------------------
+    const float distance = optixGetRayTmax();
+    const float phase = fmod(distance, WAVE_LENGTH) * 360.f / WAVE_LENGTH;
+    const HSV hsv = {phase, 1.f, 0.7f}; // use hsv color space
+    const RGB rgb = hsv2rgb(hsv);
+
+    // ------------------------------------------------------------------
+    // gather some basic hit information
+    // ------------------------------------------------------------------
+    const int primID = optixGetPrimitiveIndex();
+    const vec3i index = sbtData.index[primID];
+    const float u = optixGetTriangleBarycentrics().x;
+    const float v = optixGetTriangleBarycentrics().y;
+
+    // ------------------------------------------------------------------
+    // compute normal, using either shading normal (if avail), or
+    // geometry normal (fallback)
+    // ------------------------------------------------------------------
+    const vec3f &A = sbtData.vertex[index.x];
+    const vec3f &B = sbtData.vertex[index.y];
+    const vec3f &C = sbtData.vertex[index.z];
+    vec3f Ng = cross(B - A, C - A);
+    vec3f Ns = (sbtData.normal)
+                   ? ((1.f - u - v) * sbtData.normal[index.x] + u * sbtData.normal[index.y] + v * sbtData.normal[index.z])
+                   : Ng;
+
+    // ------------------------------------------------------------------
+    // face-forward and normalize normals
+    // ------------------------------------------------------------------
+    const vec3f rayDir = optixGetWorldRayDirection();
+
+    if (dot(rayDir, Ng) > 0.f)
+        Ng = -Ng;
+    Ng = normalize(Ng);
+
+    if (dot(Ng, Ns) < 0.f)
+        Ns -= 2.f * dot(Ng, Ns) * Ng;
+    Ns = normalize(Ns);
+
+    // ------------------------------------------------------------------
+    // final result mixed with some simple ambient effect
+    // ------------------------------------------------------------------
+    prd.pixelColor = (0.1f + 0.2f * fabsf(dot(Ns, rayDir))) + vec3f(rgb.r, rgb.g, rgb.b);
 }

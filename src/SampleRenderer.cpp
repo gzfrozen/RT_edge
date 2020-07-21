@@ -18,8 +18,6 @@
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
 
-#include "MathFunction.hpp"
-
 // extern ptx code, same name as the file in src/cuda
 extern "C" const unsigned char rayLaunch[];
 extern "C" const unsigned char environmentRender[];
@@ -470,7 +468,7 @@ void SampleRenderer::createHitgroupPrograms()
   // -------------------------------------------------------
   // radiance rays
   // -------------------------------------------------------
-  pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
+  pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__phase";
   pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__radiance";
 
   OPTIX_CHECK(optixProgramGroupCreate(optixContext,

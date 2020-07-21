@@ -145,6 +145,7 @@ set_target_properties(EM_tracing PROPERTIES
 target_precompile_headers(EM_tracing PRIVATE 
   <assert.h>
   <vector>
+  <unordered_map>
  [["optix7.hpp"]]
  [["GLFWindow.h"]]
   <GL/gl.h>
