@@ -46,9 +46,9 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/support/glfWindow EXCLUDE_FROM_ALL)
 # PTX Generation
 add_library(CudaPTX OBJECT 
             ${EM_CUDA_DIR}/rayLaunch.cu
-            ${EM_CUDA_DIR}/environmentRender.cu 
-            ${EM_CUDA_DIR}/phaseDetection.cu
-            ${EM_CUDA_DIR}/closestHit.cu)
+            ${EM_CUDA_DIR}/closestHit.cu
+            ${EM_CUDA_DIR}/anyHit.cu
+            ${EM_CUDA_DIR}/missHit.cu)
 target_include_directories(CudaPTX PRIVATE ${EM_INCLUDE_DIR}
                            PRIVATE ${EM_CUDA_DIR})
 target_link_libraries(CudaPTX
@@ -71,7 +71,6 @@ target_compile_options(CudaPTX PRIVATE --use_fast_math)
 # other libraries and executables
 set_target_properties(CudaPTX PROPERTIES 
   CUDA_PTX_COMPILATION ON 
-  # POSITION_INDEPENDENT_CODE ON 
   CUDA_ARCHITECTURES 75-real # Set your GPU architecture (important)
   )
 
@@ -147,7 +146,6 @@ target_precompile_headers(EM_tracing PRIVATE
   <vector>
   <unordered_map>
  [["optix7.hpp"]]
- [["GLFWindow.h"]]
   <GL/gl.h>
  [["gdt/math/vec.h"]]
  [["gdt/math/AffineSpace.h"]]

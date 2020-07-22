@@ -48,7 +48,7 @@ extern "C" __global__ void __raygen__renderFrame()
     for (int sampleID = 0; sampleID < numPixelSamples; sampleID++)
     {
         vec3f rayDir;
-        if (optixLaunchParams.camera.camera_type == PINHOLE)
+        if (camera.camera_type == PINHOLE)
         {
 // normalized screen plane position, in [0,1]^2
 #if NUM_PIXEL_SAMPLES > 1
@@ -60,7 +60,7 @@ extern "C" __global__ void __raygen__renderFrame()
             // generate ray direction
             rayDir = normalize(camera.direction + (screen.x - 0.5f) * camera.horizontal + (screen.y - 0.5f) * camera.vertical);
         }
-        else if (optixLaunchParams.camera.camera_type == ENV)
+        else if (camera.camera_type == ENV)
         {
 // sperical coordinate position
 #if NUM_PIXEL_SAMPLES > 1
@@ -77,6 +77,7 @@ extern "C" __global__ void __raygen__renderFrame()
                       dot(camera.matrix.vz, xyz_position)};
         }
 
+        const int &ray_type = optixLaunchParams.launch_ray_type;
         optixTrace(optixLaunchParams.traversable,
                    camera.position,
                    rayDir,
@@ -85,9 +86,9 @@ extern "C" __global__ void __raygen__renderFrame()
                    0.0f,  // rayTime
                    OptixVisibilityMask(255),
                    OPTIX_RAY_FLAG_DISABLE_ANYHIT, //OPTIX_RAY_FLAG_NONE,
-                   RADIANCE_RAY_TYPE,             // SBT offset
+                   ray_type,                      // SBT offset
                    RAY_TYPE_COUNT,                // SBT stride
-                   RADIANCE_RAY_TYPE,             // missSBTIndex
+                   ray_type,                      // missSBTIndex
                    u0, u1);
         pixelColor += prd.pixelColor;
     }

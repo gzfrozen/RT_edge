@@ -22,7 +22,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#include "CameraType.hpp"
+#include "CtrolParams.hpp"
 
 using namespace gdt;
 
@@ -389,16 +389,17 @@ protected:
 struct GLFCameraWindow : public GLFWindow
 {
   GLFCameraWindow(const std::string &title,
+                  const int &launch_ray_type,
                   const vec3f &camera_from,
                   const vec3f &camera_at,
                   const vec3f &camera_up,
                   const float worldScale)
       : GLFWindow(title),
-        cameraFrame(worldScale)
+        cameraFrame(worldScale), ray_type(launch_ray_type)
   {
     cameraFrame.setOrientation(camera_from, camera_at, camera_up);
-    enableFlyMode();
     enableInspectMode();
+    enableFlyMode();
   }
 
   void enableFlyMode();
@@ -423,6 +424,18 @@ struct GLFCameraWindow : public GLFWindow
   {
     switch (key)
     {
+    case 'r':
+    case 'R':
+      ray_type = RADIANCE_RAY_TYPE;
+      cameraFrame.modified = true;
+      std::cout << "Entering 'rendering' mode" << std::endl;
+      break;
+    case 't':
+    case 'T':
+      ray_type = PHASE_RAY_TYPE;
+      cameraFrame.modified = true;
+      std::cout << "Entering 'phase detection' mode" << std::endl;
+      break;
     case 'p':
     case 'P':
       cameraFrame.cameraType = PINHOLE;
@@ -527,6 +540,7 @@ struct GLFCameraWindow : public GLFWindow
   std::shared_ptr<CameraFrameManip> cameraFrameManip;
   std::shared_ptr<CameraFrameManip> inspectModeManip;
   std::shared_ptr<CameraFrameManip> flyModeManip;
+  int ray_type;
 };
 
 // ------------------------------------------------------------------

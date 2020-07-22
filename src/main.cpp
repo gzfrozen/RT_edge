@@ -24,10 +24,11 @@ struct SampleWindow : public GLFCameraWindow
 {
     SampleWindow(const std::string &title,
                  const Model *model,
+                 const int &launch_ray_type,
                  const Camera &camera,
                  const QuadLight &light,
                  const float worldScale)
-        : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale),
+        : GLFCameraWindow(title, launch_ray_type, camera.from, camera.at, camera.up, worldScale),
           sample(model, light)
     {
     }
@@ -44,6 +45,7 @@ struct SampleWindow : public GLFCameraWindow
     {
         if (cameraFrame.modified)
         {
+            sample.setLaunchRayType(ray_type);
             int cameraType = cameraFrame.get_camera_type();
             if (cameraType == PINHOLE)
             {
@@ -126,6 +128,9 @@ extern "C" int main(int ac, char **av)
     try
     {
         Model *model = loadOBJ(_OBJ_FILE);
+        // set launch ray type: RADIANCE_RAY_TYPE or PHASE_RAY_TYPE
+        int launch_ray_type = RADIANCE_RAY_TYPE;
+        // set launch camera position
         Camera camera = {/*from*/ vec3f(-1293.07f, 154.681f, -0.7304f),
                          /* at */ model->bounds.center() - vec3f(0, 400, 0),
                          /* up */ vec3f(0.f, 1.f, 0.f)};
@@ -142,7 +147,7 @@ extern "C" int main(int ac, char **av)
         const float worldScale = length(model->bounds.span());
 
         SampleWindow *window = new SampleWindow("Optix 7 Example",
-                                                model, camera, light, worldScale);
+                                                model, launch_ray_type, camera, light, worldScale);
         window->run();
     }
     catch (std::runtime_error &e)

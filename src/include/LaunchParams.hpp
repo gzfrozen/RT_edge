@@ -19,18 +19,9 @@
 #include "gdt/math/vec.h"
 #include "gdt/math/LinearSpace.h"
 #include "optix7.hpp"
-#include "CameraType.hpp"
+#include "CtrolParams.hpp"
 
 using namespace gdt;
-
-// for this example, we have two ray types
-enum
-{
-    RADIANCE_RAY_TYPE = 0,
-    SHADOW_RAY_TYPE,
-    // PHASE_RAY_TYPE,
-    RAY_TYPE_COUNT
-};
 
 struct TriangleMeshSBTData
 {
@@ -68,4 +59,5 @@ struct LaunchParams
     } light;
 
     OptixTraversableHandle traversable;
+    int launch_ray_type;
 };

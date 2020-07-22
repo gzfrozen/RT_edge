@@ -92,12 +92,11 @@ __forceinline__ __host__ __device__ RGB hsv2rgb(const HSV &in)
 }
 
 //------------------------------------------------------------------------------
-// closest hit and anyhit programs for radiance-type rays.
+// closest hit programs.
 //
 // Note eventually we will have to create one pair of those for each
-// ray type and each geometry type we want to render; but this
-// simple example doesn't use any actual geometries yet, so we only
-// create a single, dummy, set of them (we do have to have at least
+// ray type and each geometry type we want to render; but in some simple situations,
+// only dummy programms is needed (we do have to have at least
 // one group of them to set up the SBT)
 //------------------------------------------------------------------------------
 

@@ -20,9 +20,9 @@
 
 // extern ptx code, same name as the file in src/cuda
 extern "C" const unsigned char rayLaunch[];
-extern "C" const unsigned char environmentRender[];
-extern "C" const unsigned char phaseDetection[];
 extern "C" const unsigned char closestHit[];
+extern "C" const unsigned char anyHit[];
+extern "C" const unsigned char missHit[];
 
 /*! SBT record for a raygen program */
 struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecord
@@ -358,9 +358,9 @@ void SampleRenderer::createModule()
   // load each ptx code manually
   static std::unordered_map<std::string, const unsigned char *> ptxCode;
   ptxCode["rayLaunch"] = rayLaunch;
-  ptxCode["environmentRender"] = environmentRender;
   ptxCode["closestHit"] = closestHit;
-  // ptxCode["phaseDetection"] = phaseDetection;
+  ptxCode["anyHit"] = anyHit;
+  ptxCode["missHit"] = missHit;
 
   for (auto i : ptxCode)
   {
@@ -417,7 +417,7 @@ void SampleRenderer::createMissPrograms()
   OptixProgramGroupOptions pgOptions = {};
   OptixProgramGroupDesc pgDesc = {};
   pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
-  pgDesc.miss.module = module["environmentRender"];
+  pgDesc.miss.module = module["missHit"];
 
   // ------------------------------------------------------------------
   // radiance rays
@@ -448,6 +448,20 @@ void SampleRenderer::createMissPrograms()
                                       &missPGs[SHADOW_RAY_TYPE]));
   if (sizeof_log > 1)
     PRINT(log);
+
+  // ------------------------------------------------------------------
+  // phase detection rays
+  // ------------------------------------------------------------------
+  pgDesc.miss.entryFunctionName = "__miss__phase";
+
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &missPGs[PHASE_RAY_TYPE]));
+  if (sizeof_log > 1)
+    PRINT(log);
 }
 
 /*! does all setup for the hitgroup program(s) we are going to use */
@@ -463,12 +477,12 @@ void SampleRenderer::createHitgroupPrograms()
   OptixProgramGroupDesc pgDesc = {};
   pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
   pgDesc.hitgroup.moduleCH = module["closestHit"];
-  pgDesc.hitgroup.moduleAH = module["environmentRender"];
+  pgDesc.hitgroup.moduleAH = module["anyHit"];
 
   // -------------------------------------------------------
   // radiance rays
   // -------------------------------------------------------
-  pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__phase";
+  pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
   pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__radiance";
 
   OPTIX_CHECK(optixProgramGroupCreate(optixContext,
@@ -494,6 +508,23 @@ void SampleRenderer::createHitgroupPrograms()
                                       &pgOptions,
                                       log, &sizeof_log,
                                       &hitgroupPGs[SHADOW_RAY_TYPE]));
+  if (sizeof_log > 1)
+    PRINT(log);
+
+  // -------------------------------------------------------
+  // phase detection rays: rays used to detect phase change by
+  // trace the distance between camer and hit point, no futher
+  // shadow ray will be launched by this type of ray
+  // -------------------------------------------------------
+  pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__phase";
+  pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__phase";
+
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &hitgroupPGs[PHASE_RAY_TYPE]));
   if (sizeof_log > 1)
     PRINT(log);
 }
@@ -667,6 +698,12 @@ void SampleRenderer::setEnvCamera(const Camera &camera)
   launchParams.camera.matrix = linear3f{-camera.matrix.vz,
                                         -camera.matrix.vx,
                                         camera.matrix.vy};
+}
+
+/*! set ray type used in __raygen__ */
+void SampleRenderer::setLaunchRayType(const int &launch_ray_type)
+{
+  launchParams.launch_ray_type = launch_ray_type;
 }
 
 /*! resize frame buffer to given resolution */

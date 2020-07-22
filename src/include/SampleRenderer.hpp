@@ -63,6 +63,9 @@ public:
   /*! set sphere camera to render with */
   void setEnvCamera(const Camera &camera);
 
+  /*! set sphere camera to render with */
+  void setLaunchRayType(const int &launch_ray_type);
+
 protected:
   // ------------------------------------------------------------------
   // internal helper functions
