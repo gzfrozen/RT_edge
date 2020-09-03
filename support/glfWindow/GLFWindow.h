@@ -22,7 +22,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#include "CtrolParams.hpp"
+#include "ControlParams.hpp"
 
 using namespace gdt;
 

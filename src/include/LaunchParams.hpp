@@ -19,7 +19,7 @@
 #include "gdt/math/vec.h"
 #include "gdt/math/LinearSpace.h"
 #include "optix7.hpp"
-#include "CtrolParams.hpp"
+#include "ControlParams.hpp"
 
 using namespace gdt;
 

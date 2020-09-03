@@ -1,12 +1,14 @@
-# EM_tracing
+# RT_edge
 
-### About the name
+### About this project
 
-'EM' means 'Electromagnetic Waves'. However not many EM related functions at this point.
+This project changed its name from 'EM_tracing' to 'RT-edge'.
+This project means to develop a new method of triangle-based 3D geometry edge detection algorithm.
+No related implementation at this point.
 
 ## Introduction
 
-EM_tracing is a software based on [Nvidia Optix Ray Tracing Engine](https://developer.nvidia.com/optix). A big part of the code came from [ingowald/optix7course](https://github.com/ingowald/optix7course).
+RT_edge is a software based on [Nvidia Optix Ray Tracing Engine](https://developer.nvidia.com/optix). A big part of the code came from [ingowald/optix7course](https://github.com/ingowald/optix7course).
 
 ## Building the code
 
@@ -37,7 +39,7 @@ This code requires [CMake](https://cmake.org/download/) (version 3.18 or higher)
 >     )
 - Also in /CMakeLists.txt, _OBJ_FILE. Change it to match your .obj file path
 >     #Set your OBJ file path
->     target_compile_definitions(EM_tracing PUBLIC _OBJ_FILE="${PROJECT_SOURCE_DIR}/models/sponza.obj")
+>     target_compile_definitions(RT_edge PUBLIC _OBJ_FILE="${PROJECT_SOURCE_DIR}/models/sponza.obj")
 
 ## Controlling 
 

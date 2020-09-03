@@ -19,4 +19,4 @@ add_library(glfWindow
   GLFWindow.cpp
   )
 
-target_include_directories(glfWindow PRIVATE ${EM_INCLUDE_DIR})
+target_include_directories(glfWindow PRIVATE ${INCLUDE_DIR})

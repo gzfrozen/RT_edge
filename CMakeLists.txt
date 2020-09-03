@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(EM_tracing LANGUAGES CXX CUDA)
+project(RT_edge LANGUAGES CXX CUDA)
 
 if (MSVC)
     # set source code format to UTF-8 
@@ -28,9 +28,9 @@ include_directories(${PROJECT_SOURCE_DIR}/support/3rdParty/)
 # build glfw
 # ------------------------------------------------------------------
 # Setting directories
-set(EM_SRC_DIR ${PROJECT_SOURCE_DIR}/src CACHE PATH "Project source directory")
-set(EM_INCLUDE_DIR ${EM_SRC_DIR}/include CACHE PATH "Header file directory")
-set(EM_CUDA_DIR ${EM_SRC_DIR}/cuda CACHE PATH "CUDA file directory")
+set(SRC_DIR ${PROJECT_SOURCE_DIR}/src CACHE PATH "Project source directory")
+set(INCLUDE_DIR ${SRC_DIR}/include CACHE PATH "Header file directory")
+set(CUDA_DIR ${SRC_DIR}/cuda CACHE PATH "CUDA file directory")
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 if (WIN32)
@@ -45,12 +45,12 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/support/glfWindow EXCLUDE_FROM_ALL)
 
 # PTX Generation
 add_library(CudaPTX OBJECT 
-            ${EM_CUDA_DIR}/rayLaunch.cu
-            ${EM_CUDA_DIR}/closestHit.cu
-            ${EM_CUDA_DIR}/anyHit.cu
-            ${EM_CUDA_DIR}/missHit.cu)
-target_include_directories(CudaPTX PRIVATE ${EM_INCLUDE_DIR}
-                           PRIVATE ${EM_CUDA_DIR})
+            ${CUDA_DIR}/rayLaunch.cu
+            ${CUDA_DIR}/closestHit.cu
+            ${CUDA_DIR}/anyHit.cu
+            ${CUDA_DIR}/missHit.cu)
+target_include_directories(CudaPTX PRIVATE ${INCLUDE_DIR}
+                           PRIVATE ${CUDA_DIR})
 target_link_libraries(CudaPTX
   gdt
   ${optix_LIBRARY}
@@ -87,7 +87,7 @@ target_precompile_headers(CudaPTX PRIVATE
 # redirect to a cmake buffer
 # 3. We want to pack everything into a single output file, so we
 # need to also pass the --name option
-set(output_file ${EM_SRC_DIR}/embedded_objs.cpp)
+set(output_file ${SRC_DIR}/embedded_objs.cpp)
 
 get_filename_component(cuda_compiler_bin "${CMAKE_CUDA_COMPILER}" DIRECTORY)
 find_program(bin_to_c
@@ -115,15 +115,15 @@ add_custom_command(
   )
 
 # Main program
-add_executable(EM_tracing 
+add_executable(RT_edge 
     ${output_file}   
-    ${EM_SRC_DIR}/main.cpp 
-    ${EM_SRC_DIR}/SampleRenderer.cpp 
-    ${EM_SRC_DIR}/Model.cpp 
+    ${SRC_DIR}/main.cpp 
+    ${SRC_DIR}/SampleRenderer.cpp 
+    ${SRC_DIR}/Model.cpp 
     )
-add_dependencies(EM_tracing CudaPTX)
-target_include_directories(EM_tracing PRIVATE ${EM_INCLUDE_DIR})
-target_link_libraries(EM_tracing
+add_dependencies(RT_edge CudaPTX)
+target_include_directories(RT_edge PRIVATE ${INCLUDE_DIR})
+target_link_libraries(RT_edge
   gdt
   ${optix_LIBRARY}
   ${CUDA_LIBRARIES}
@@ -133,15 +133,15 @@ target_link_libraries(EM_tracing
   ${OPENGL_gl_LIBRARY}
   )
 
-target_compile_features(EM_tracing PRIVATE cxx_std_17)
+target_compile_features(RT_edge PRIVATE cxx_std_17)
 
 # Set your OBJ file path
-target_compile_definitions(EM_tracing PUBLIC _OBJ_FILE="${PROJECT_SOURCE_DIR}/models/sponza.obj")
+target_compile_definitions(RT_edge PUBLIC _OBJ_FILE="${PROJECT_SOURCE_DIR}/models/sponza.obj")
 
-set_target_properties(EM_tracing PROPERTIES 
+set_target_properties(RT_edge PROPERTIES 
   POSITION_INDEPENDENT_CODE ON )
 
-target_precompile_headers(EM_tracing PRIVATE 
+target_precompile_headers(RT_edge PRIVATE 
   <assert.h>
   <vector>
   <unordered_map>
@@ -156,5 +156,5 @@ target_precompile_headers(EM_tracing PRIVATE
 if(APPLE)
 # We need to add the default path to the driver (libcuda.dylib) as an rpath,
 # so that the static cuda runtime can find it at runtime.
-  set_target_property(EM_tracing PROPERTY BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
+  set_target_property(RT_edge PROPERTY BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
 endif()

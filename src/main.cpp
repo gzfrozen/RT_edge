@@ -154,7 +154,7 @@ extern "C" int main(int ac, char **av)
     {
         std::cout << GDT_TERMINAL_RED << "FATAL ERROR: " << e.what()
                   << GDT_TERMINAL_DEFAULT << std::endl;
-        std::cout << "Did you forget to copy sponza.obj and sponza.mtl into your EM_tracing/models directory?" << std::endl;
+        std::cout << "Did you forget to copy sponza.obj and sponza.mtl into your RT_edge/models directory?" << std::endl;
         exit(1);
     }
     return 0;
