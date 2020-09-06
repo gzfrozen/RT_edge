@@ -252,3 +252,85 @@ extern "C" __global__ void __closesthit__phase()
     // ------------------------------------------------------------------
     prd.pixelColor = (0.1f + 0.2f * fabsf(dot(Ns, rayDir))) + vec3f(rgb.r, rgb.g, rgb.b);
 }
+
+extern "C" __global__ void __closesthit__mono()
+{
+    const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *)optixGetSbtDataPointer();
+    PRD &prd = *getPRD<PRD>();
+
+    // ------------------------------------------------------------------
+    // gather some basic hit information
+    // ------------------------------------------------------------------
+    const int primID = optixGetPrimitiveIndex();
+    const vec3i index = sbtData.index[primID];
+    const float u = optixGetTriangleBarycentrics().x;
+    const float v = optixGetTriangleBarycentrics().y;
+
+    // ------------------------------------------------------------------
+    // compute normal, using either shading normal (if avail), or
+    // geometry normal (fallback)
+    // ------------------------------------------------------------------
+    const vec3f &A = sbtData.vertex[index.x];
+    const vec3f &B = sbtData.vertex[index.y];
+    const vec3f &C = sbtData.vertex[index.z];
+
+    const vec3f AB = B - A;
+    const vec3f BC = C - B;
+    const vec3f CA = A - C;
+
+    vec3f Ng = cross(CA, AB);
+    vec3f Ns = (sbtData.normal)
+                   ? ((1.f - u - v) * sbtData.normal[index.x] + u * sbtData.normal[index.y] + v * sbtData.normal[index.z])
+                   : Ng;
+
+    // ------------------------------------------------------------------
+    // face-forward and normalize normals
+    // ------------------------------------------------------------------
+    const vec3f rayDir = optixGetWorldRayDirection();
+
+    if (dot(rayDir, Ng) > 0.f)
+        Ng = -Ng;
+    Ng = normalize(Ng);
+
+    if (dot(Ng, Ns) < 0.f)
+        Ns -= 2.f * dot(Ng, Ns) * Ng;
+    Ns = normalize(Ns);
+
+    // ------------------------------------------------------------------
+    // compute edge
+    // ------------------------------------------------------------------
+    // edge ray start position
+    const vec3f surfPos = (1.f - u - v) * sbtData.vertex[index.x] + u * sbtData.vertex[index.y] + v * sbtData.vertex[index.z];
+    const vec3f surfDepth = 1e-2f * Ng;
+
+    // edge ray direction
+    const vec3f d_AB = cross(AB, Ng);
+    const vec3f d_BC = cross(BC, Ng);
+    const vec3f d_CA = cross(CA, Ng);
+    const vec3f edge_direction[3] = {d_AB, d_BC, d_CA};
+    // ray payload: is edge == true (1)
+    uint32_t edge_exist = 0;
+
+    // trace edge ray
+    for (int i = 0; i < 3; i++)
+    {
+        optixTrace(optixLaunchParams.traversable,
+                   surfPos - surfDepth,
+                   edge_direction[i],
+                   0,     // tmin
+                   1e-2f, // tmax
+                   0.0f,  // rayTime
+                   OptixVisibilityMask(255),
+                   OPTIX_RAY_FLAG_DISABLE_ANYHIT,
+                   EDGE_RAY_TYPE,  // SBT offset
+                   RAY_TYPE_COUNT, // SBT stride
+                   EDGE_RAY_TYPE,  // missSBTIndex
+                   edge_exist);
+    }
+    edge_exist ? prd.pixelColor = {0.f, 0.f, 0.f} : 0;
+}
+
+extern "C" __global__ void __closesthit__edge()
+{
+    optixSetPayload_0(1);
+}

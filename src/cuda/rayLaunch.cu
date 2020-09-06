@@ -36,7 +36,7 @@ extern "C" __global__ void __raygen__renderFrame()
     PRD prd;
     prd.random.init(ix + accumID * optixLaunchParams.frame.size.x,
                     iy + accumID * optixLaunchParams.frame.size.y);
-    prd.pixelColor = vec3f(0.f);
+    prd.pixelColor = vec3f(255.f);
 
     // the values we store the PRD pointer in:
     uint32_t u0, u1;

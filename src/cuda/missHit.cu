@@ -25,3 +25,14 @@ extern "C" __global__ void __miss__phase()
     PRD &prd = *getPRD<PRD>();
     prd.pixelColor = vec3f(1.f);
 }
+
+extern "C" __global__ void __miss__mono()
+{
+    PRD &prd = *getPRD<PRD>();
+    // set to constant white as background color
+    prd.pixelColor = vec3f(1.f);
+}
+
+extern "C" __global__ void __miss__edge()
+{
+}

@@ -462,6 +462,34 @@ void SampleRenderer::createMissPrograms()
                                       &missPGs[PHASE_RAY_TYPE]));
   if (sizeof_log > 1)
     PRINT(log);
+
+  // ------------------------------------------------------------------
+  // mono rays
+  // ------------------------------------------------------------------
+  pgDesc.miss.entryFunctionName = "__miss__mono";
+
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &missPGs[MONO_RAY_TYPE]));
+  if (sizeof_log > 1)
+    PRINT(log);
+
+  // ------------------------------------------------------------------
+  // edge detection rays
+  // ------------------------------------------------------------------
+  pgDesc.miss.entryFunctionName = "__miss__edge";
+
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &missPGs[EDGE_RAY_TYPE]));
+  if (sizeof_log > 1)
+    PRINT(log);
 }
 
 /*! does all setup for the hitgroup program(s) we are going to use */
@@ -525,6 +553,36 @@ void SampleRenderer::createHitgroupPrograms()
                                       &pgOptions,
                                       log, &sizeof_log,
                                       &hitgroupPGs[PHASE_RAY_TYPE]));
+  if (sizeof_log > 1)
+    PRINT(log);
+
+  // -------------------------------------------------------
+  // mono rays: like radius rays but don't care about color
+  // -------------------------------------------------------
+  pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__mono";
+  pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__mono";
+
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &hitgroupPGs[MONO_RAY_TYPE]));
+  if (sizeof_log > 1)
+    PRINT(log);
+
+  // -------------------------------------------------------
+  // edge detection rays: rays used to detect edge, launched by mono rays
+  // -------------------------------------------------------
+  pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__edge";
+  pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__edge";
+
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &hitgroupPGs[EDGE_RAY_TYPE]));
   if (sizeof_log > 1)
     PRINT(log);
 }

@@ -21,3 +21,13 @@ extern "C" __global__ void __anyhit__phase()
 {
     /* not going to be used ... */
 }
+
+extern "C" __global__ void __anyhit__mono()
+{
+    /* not going to be used ... */
+}
+
+extern "C" __global__ void __anyhit__edge()
+{
+    /* not going to be used ... */
+}

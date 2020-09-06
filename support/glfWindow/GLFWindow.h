@@ -424,6 +424,12 @@ struct GLFCameraWindow : public GLFWindow
   {
     switch (key)
     {
+    case 'e':
+    case 'E':
+      ray_type = MONO_RAY_TYPE;
+      cameraFrame.modified = true;
+      std::cout << "Entering 'edge' mode" << std::endl;
+      break;
     case 'r':
     case 'R':
       ray_type = RADIANCE_RAY_TYPE;
