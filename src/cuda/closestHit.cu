@@ -91,6 +91,11 @@ __forceinline__ __host__ __device__ RGB hsv2rgb(const HSV &in)
     return out;
 }
 
+// calculate the distance from point P to line AB
+__forceinline__ __host__ __device__ float point_to_line(const vec3f &AP, const vec3f &AB)
+{
+    return length(cross(AP, AB)) / length(AB);
+}
 //------------------------------------------------------------------------------
 // closest hit programs.
 //
@@ -301,36 +306,54 @@ extern "C" __global__ void __closesthit__mono()
     // ------------------------------------------------------------------
     // edge ray start position
     const vec3f surfPos = (1.f - u - v) * sbtData.vertex[index.x] + u * sbtData.vertex[index.y] + v * sbtData.vertex[index.z];
-    const vec3f surfDepth = 1e-2f * Ng;
+    const vec3f surfDepth = EDGE_DETECTION_DEPTH * Ng;
 
     // edge ray direction
-    const vec3f d_AB = cross(AB, Ng);
-    const vec3f d_BC = cross(BC, Ng);
-    const vec3f d_CA = cross(CA, Ng);
-    const vec3f edge_direction[3] = {d_AB, d_BC, d_CA};
-    // ray payload: is edge == true (1)
-    uint32_t edge_exist = 0;
+    const vec3f edge_direction[3] = {cross(AB, Ng), cross(BC, Ng), cross(CA, Ng)};
 
+    // distance from hit position to triangle edge
+    const float edge_distance[3] = {
+        point_to_line(surfPos - A, AB),
+        point_to_line(surfPos - B, BC),
+        point_to_line(surfPos - C, CA)};
+
+    bool is_edge = false;
     // trace edge ray
     for (int i = 0; i < 3; i++)
     {
+        // per ray date for edge detection
+        PRD_Edge prd_edge;
+        if (edge_distance[i] > MAX_EDGE_DISTANCE)
+            continue;
+        prd_edge.edge_distance = edge_distance[i];
+        prd_edge.is_edge = false;
+        // the values we store the PRD_Edge pointer in:
+        uint32_t u0, u1;
+        packPointer(&prd_edge, u0, u1);
         optixTrace(optixLaunchParams.traversable,
                    surfPos - surfDepth,
                    edge_direction[i],
-                   0,     // tmin
-                   1e-2f, // tmax
-                   0.0f,  // rayTime
+                   0,                         // tmin
+                   edge_distance[i] * 1.001f, // tmax
+                   0.0f,                      // rayTime
                    OptixVisibilityMask(255),
                    OPTIX_RAY_FLAG_DISABLE_ANYHIT,
                    EDGE_RAY_TYPE,  // SBT offset
                    RAY_TYPE_COUNT, // SBT stride
                    EDGE_RAY_TYPE,  // missSBTIndex
-                   edge_exist);
+                   u0, u1);
+        prd_edge.is_edge ? is_edge = true : 0;
     }
-    edge_exist ? prd.pixelColor = {0.f, 0.f, 0.f} : 0;
+    is_edge ? prd.pixelColor = {0.f, 0.f, 0.f} : 0;
 }
 
 extern "C" __global__ void __closesthit__edge()
 {
-    optixSetPayload_0(1);
+    const float hit_distance = optixGetRayTmax();
+    PRD_Edge &prd_edge = *getPRD<PRD_Edge>();
+    float x = prd_edge.edge_distance - hit_distance;
+    float edge_angle;
+    edge_angle = atan2f(EDGE_DETECTION_DEPTH, x);
+    // printf("%f\n", edge_angle);
+    edge_angle <= MAX_EDGE_ANGLE ? prd_edge.is_edge = true : 0;
 }

@@ -11,6 +11,10 @@
 
 #define WAVE_LENGTH 100.f
 
+#define EDGE_DETECTION_DEPTH 1e-6f
+#define MAX_EDGE_DISTANCE 2e-1f
+#define MAX_EDGE_ANGLE M_PI * 1.f / 6.f
+
 /*! launch parameters in constant memory, filled in by optix upon
     optixLaunch (this gets filled in from the buffer we pass to
     optixLaunch) */
@@ -25,6 +29,13 @@ struct PRD
 {
     Random random;
     vec3f pixelColor;
+};
+
+/*! per-ray data for edge detection */
+struct PRD_Edge
+{
+    float edge_distance;
+    bool is_edge;
 };
 
 static __forceinline__ __device__ void *unpackPointer(uint32_t i0, uint32_t i1)
