@@ -23,34 +23,13 @@ static void glfw_error_callback(int error, const char *description)
   fprintf(stderr, "Error: %s\n", description);
 }
 
-GLFWindow::~GLFWindow()
+/*! callback for a window content DPI change event */
+static void glfwindow_monitorScale_cb(GLFWwindow *window, float xscale, float yscale)
 {
-  glfwDestroyWindow(handle);
-  glfwTerminate();
-}
-
-GLFWindow::GLFWindow(const std::string &title)
-{
-  glfwSetErrorCallback(glfw_error_callback);
-  // glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);
-
-  if (!glfwInit())
-    exit(EXIT_FAILURE);
-
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
-
-  handle = glfwCreateWindow(1920, 1080, title.c_str(), NULL, NULL);
-  if (!handle)
-  {
-    glfwTerminate();
-    exit(EXIT_FAILURE);
-  }
-
-  glfwSetWindowUserPointer(handle, this);
-  glfwMakeContextCurrent(handle);
-  glfwSwapInterval(1);
+  GLFWindow *gw = static_cast<GLFWindow *>(glfwGetWindowUserPointer(window));
+  assert(gw);
+  gw->xscale = xscale;
+  gw->yscale = yscale;
 }
 
 /*! callback for a window resizing event */
@@ -68,13 +47,16 @@ static void glfwindow_key_cb(GLFWwindow *window, int key, int scancode, int acti
 {
   GLFWindow *gw = static_cast<GLFWindow *>(glfwGetWindowUserPointer(window));
   assert(gw);
-  if (action == GLFW_PRESS)
+  if (!gw->ui_on || key == GLFW_KEY_ESCAPE)
   {
-    gw->key(key, mods);
-  }
-  if (action == GLFW_RELEASE)
-  {
-    gw->key_release(key, mods);
+    if (action == GLFW_PRESS)
+    {
+      gw->key(key, mods);
+    }
+    if (action == GLFW_RELEASE)
+    {
+      gw->key_release(key, mods);
+    }
   }
 }
 
@@ -93,7 +75,48 @@ static void glfwindow_mouseButton_cb(GLFWwindow *window, int button, int action,
   assert(gw);
   // double x, y;
   // glfwGetCursorPos(window,&x,&y);
-  gw->mouseButton(button, action, mods);
+  if (!gw->ui_on)
+  {
+    gw->mouseButton(button, action, mods);
+  }
+}
+
+GLFWindow::~GLFWindow()
+{
+  glfwDestroyWindow(handle);
+  glfwTerminate();
+}
+
+GLFWindow::GLFWindow(const std::string &title)
+{
+  glfwSetErrorCallback(glfw_error_callback);
+  // glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);
+
+  if (!glfwInit())
+    exit(EXIT_FAILURE);
+
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+  // glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
+
+  handle = glfwCreateWindow(1920, 1080, title.c_str(), NULL, NULL);
+  if (!handle)
+  {
+    glfwTerminate();
+    exit(EXIT_FAILURE);
+  }
+
+  glfwSetWindowUserPointer(handle, this);
+  glfwMakeContextCurrent(handle);
+  glfwSwapInterval(1);
+
+  // glfwSetWindowUserPointer(window, GLFWindow::current);
+  glfwSetFramebufferSizeCallback(handle, glfwindow_reshape_cb);
+  glfwSetMouseButtonCallback(handle, glfwindow_mouseButton_cb);
+  glfwSetKeyCallback(handle, glfwindow_key_cb);
+  glfwSetCursorPosCallback(handle, glfwindow_mouseMotion_cb);
+  glfwSetWindowContentScaleCallback(handle, glfwindow_monitorScale_cb);
 }
 
 void GLFWindow::run()
@@ -101,18 +124,14 @@ void GLFWindow::run()
   int width, height;
   glfwGetFramebufferSize(handle, &width, &height);
   resize(vec2i(width, height));
-
-  // glfwSetWindowUserPointer(window, GLFWindow::current);
-  glfwSetFramebufferSizeCallback(handle, glfwindow_reshape_cb);
-  glfwSetMouseButtonCallback(handle, glfwindow_mouseButton_cb);
-  glfwSetKeyCallback(handle, glfwindow_key_cb);
-  glfwSetCursorPosCallback(handle, glfwindow_mouseMotion_cb);
+  glfwGetWindowContentScale(handle, &xscale, &yscale);
 
   while (!glfwWindowShouldClose(handle))
   {
     before_render();
     render();
     draw();
+    draw_gui();
 
     glfwSwapBuffers(handle);
     glfwPollEvents();

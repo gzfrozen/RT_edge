@@ -18,9 +18,9 @@
 
 #include <unordered_map>
 // our own classes, partly shared between host and device
-#include "CUDABuffer.hpp"
-#include "LaunchParams.hpp"
-#include "Model.hpp"
+#include <CUDABuffer.hpp>
+#include <LaunchParams.hpp>
+#include <Model.hpp>
 
 struct Camera
 {
@@ -65,6 +65,9 @@ public:
 
   /*! set sphere camera to render with */
   void setLaunchRayType(const int &launch_ray_type);
+
+  /*! return the reference of launch parameters */
+  LaunchParams &getLaunchParams();
 
 protected:
   // ------------------------------------------------------------------

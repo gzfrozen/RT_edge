@@ -40,6 +40,10 @@ if (WIN32)
 else()
   find_package(glfw3 REQUIRED)
 endif()
+# Build ImGui
+include_directories(${PROJECT_SOURCE_DIR}/support/ImGui/)
+add_subdirectory(${PROJECT_SOURCE_DIR}/support/ImGui)
+# Build glfWindoW
 include_directories(${PROJECT_SOURCE_DIR}/support/glfWindow)
 add_subdirectory(${PROJECT_SOURCE_DIR}/support/glfWindow EXCLUDE_FROM_ALL)
 
@@ -120,6 +124,7 @@ add_executable(RT_edge
     ${SRC_DIR}/main.cpp 
     ${SRC_DIR}/SampleRenderer.cpp 
     ${SRC_DIR}/Model.cpp 
+    ${SRC_DIR}/MainWindow.cpp 
     )
 add_dependencies(RT_edge CudaPTX)
 target_include_directories(RT_edge PRIVATE ${INCLUDE_DIR})
@@ -130,6 +135,7 @@ target_link_libraries(RT_edge
   ${CUDA_CUDA_LIBRARY}
   glfw
   glfWindow
+  ImGui
   ${OPENGL_gl_LIBRARY}
   )
 
@@ -145,7 +151,7 @@ target_precompile_headers(RT_edge PRIVATE
   <assert.h>
   <vector>
   <unordered_map>
- [["optix7.hpp"]]
+  <optix7.hpp>
   <GL/gl.h>
  [["gdt/math/vec.h"]]
  [["gdt/math/AffineSpace.h"]]

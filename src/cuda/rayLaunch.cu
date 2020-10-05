@@ -42,7 +42,7 @@ extern "C" __global__ void __raygen__renderFrame()
     uint32_t u0, u1;
     packPointer(&prd, u0, u1);
 
-    int numPixelSamples = NUM_PIXEL_SAMPLES;
+    int numPixelSamples = optixLaunchParams.parameters.NUM_PIXEL_SAMPLES;
 
     vec3f pixelColor = 0.f;
     for (int sampleID = 0; sampleID < numPixelSamples; sampleID++)
@@ -50,24 +50,32 @@ extern "C" __global__ void __raygen__renderFrame()
         vec3f rayDir;
         if (camera.camera_type == PINHOLE)
         {
-// normalized screen plane position, in [0,1]^2
-#if NUM_PIXEL_SAMPLES > 1
-            const vec2f screen(vec2f(ix + prd.random() - 0.5f, iy + prd.random() - 0.5f) / vec2f(optixLaunchParams.frame.size));
-#else
-            const vec2f screen(vec2f(ix, iy) / vec2f(optixLaunchParams.frame.size));
-#endif
+            // normalized screen plane position, in [0,1]^2
+            vec2f screen;
+            if (optixLaunchParams.parameters.NUM_PIXEL_SAMPLES > 1)
+            {
+                screen = (vec2f(ix + prd.random() - 0.5f, iy + prd.random() - 0.5f) / vec2f(optixLaunchParams.frame.size));
+            }
+            else
+            {
+                screen = (vec2f(ix, iy) / vec2f(optixLaunchParams.frame.size));
+            }
 
             // generate ray direction
             rayDir = normalize(camera.direction + (screen.x - 0.5f) * camera.horizontal + (screen.y - 0.5f) * camera.vertical);
         }
         else if (camera.camera_type == ENV)
         {
-// sperical coordinate position
-#if NUM_PIXEL_SAMPLES > 1
-            vec3f spherical_position((ix + prd.random() - 0.5f) * camera.horizontal + (iy + prd.random() - 0.5f) * camera.vertical);
-#else
-            vec3f spherical_position((float)ix * camera.horizontal + (float)iy * camera.vertical);
-#endif
+            // sperical coordinate position
+            vec3f spherical_position;
+            if (optixLaunchParams.parameters.NUM_PIXEL_SAMPLES > 1)
+            {
+                spherical_position = ((ix + prd.random() - 0.5f) * camera.horizontal + (iy + prd.random() - 0.5f) * camera.vertical);
+            }
+            else
+            {
+                spherical_position = ((float)ix * camera.horizontal + (float)iy * camera.vertical);
+            }
             spherical_position -= vec3f(0.f, M_PI, 0.f);
             // change into xyz coordinate position
             const vec3f xyz_position(sphere_to_normal(spherical_position));
@@ -77,7 +85,7 @@ extern "C" __global__ void __raygen__renderFrame()
                       dot(camera.matrix.vz, xyz_position)};
         }
 
-        const int &ray_type = optixLaunchParams.launch_ray_type;
+        const int &ray_type = optixLaunchParams.parameters.LAUNCH_RAY_TYPE;
         optixTrace(optixLaunchParams.traversable,
                    camera.position,
                    rayDir,

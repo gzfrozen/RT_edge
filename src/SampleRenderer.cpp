@@ -14,7 +14,7 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include "SampleRenderer.hpp"
+#include <SampleRenderer.hpp>
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
 
@@ -761,14 +761,20 @@ void SampleRenderer::setEnvCamera(const Camera &camera)
 /*! set ray type used in __raygen__ */
 void SampleRenderer::setLaunchRayType(const int &launch_ray_type)
 {
-  launchParams.launch_ray_type = launch_ray_type;
+  launchParams.parameters.LAUNCH_RAY_TYPE = launch_ray_type;
+}
+
+/*! set sphere camera to render with */
+LaunchParams &SampleRenderer::getLaunchParams()
+{
+  return launchParams;
 }
 
 /*! resize frame buffer to given resolution */
 void SampleRenderer::resize(const vec2i &newSize)
 {
   // if window minimized
-  if (newSize.x == 0 | newSize.y == 0)
+  if (newSize.x == 0 || newSize.y == 0)
     return;
   // resize our cuda frame buffer
   colorBuffer.resize(newSize.x * newSize.y * sizeof(uint32_t));

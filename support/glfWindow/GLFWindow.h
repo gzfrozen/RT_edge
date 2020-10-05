@@ -80,6 +80,11 @@ struct GLFWindow
   { /* empty - to be subclassed by user */
   }
 
+  /*! draw GUI layout */
+  virtual void draw_gui()
+  { /* empty - to be subclassed by user */
+  }
+
   /*! opens the actual window, and runs the window's events to
       completion. This function will only return once the window
       gets closed */
@@ -87,6 +92,10 @@ struct GLFWindow
 
   /*! the glfw window handle */
   GLFWwindow *handle{nullptr};
+
+  float xscale = 1.f;
+  float yscale = 1.f;
+  bool ui_on = false;
 };
 
 struct CameraFrame
@@ -413,17 +422,14 @@ struct GLFCameraWindow : public GLFWindow
   // virtual void resize(const vec2i &newSize)
   // { /* empty - to be subclassed by user */ }
 
-  virtual void before_render() override
-  {
-    if (cameraFrameManip)
-      cameraFrameManip->move_wsad();
-    return;
-  }
-
   virtual void key(int key, int mods) override
   {
     switch (key)
     {
+    case GLFW_KEY_ESCAPE:
+      ui_on = !ui_on;
+      cameraFrame.modified = true;
+      break;
     case 'e':
     case 'E':
       ray_type = MONO_RAY_TYPE;

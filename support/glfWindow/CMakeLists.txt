@@ -15,8 +15,9 @@
 # ======================================================================== #
 
 add_library(glfWindow
-  GLFWindow.h
-  GLFWindow.cpp
-  )
+GLFWindow.h
+GLFWindow.cpp
+)
 
 target_include_directories(glfWindow PRIVATE ${INCLUDE_DIR})
+target_link_libraries(glfWindow PUBLIC ImGui)

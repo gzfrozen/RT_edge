@@ -162,7 +162,7 @@ extern "C" __global__ void __closesthit__radiance()
     // compute shadow
     // ------------------------------------------------------------------
     const vec3f surfPos = (1.f - u - v) * sbtData.vertex[index.x] + u * sbtData.vertex[index.y] + v * sbtData.vertex[index.z];
-    const int numLightSamples = NUM_LIGHT_SAMPLES;
+    const int numLightSamples = optixLaunchParams.parameters.NUM_LIGHT_SAMPLES;
     for (int lightSampleID = 0; lightSampleID < numLightSamples; lightSampleID++)
     {
         // produce random light sample
@@ -215,7 +215,7 @@ extern "C" __global__ void __closesthit__phase()
     // phase and color calculation
     // ------------------------------------------------------------------
     const float distance = optixGetRayTmax();
-    const float phase = fmod(distance, WAVE_LENGTH) * 360.f / WAVE_LENGTH;
+    const float phase = fmod(distance, optixLaunchParams.parameters.WAVE_LENGTH) * 360.f / optixLaunchParams.parameters.WAVE_LENGTH;
     const HSV hsv = {phase, 1.f, 0.7f}; // use hsv color space
     const RGB rgb = hsv2rgb(hsv);
 
@@ -306,7 +306,7 @@ extern "C" __global__ void __closesthit__mono()
     // ------------------------------------------------------------------
     // edge ray start position
     const vec3f surfPos = (1.f - u - v) * sbtData.vertex[index.x] + u * sbtData.vertex[index.y] + v * sbtData.vertex[index.z];
-    const vec3f surfDepth = EDGE_DETECTION_DEPTH * Ng;
+    const vec3f surfDepth = optixLaunchParams.parameters.EDGE_DETECTION_DEPTH * Ng;
 
     // edge ray direction
     const vec3f edge_direction[3] = {cross(AB, Ng), cross(BC, Ng), cross(CA, Ng)};
@@ -323,7 +323,7 @@ extern "C" __global__ void __closesthit__mono()
     {
         // per ray date for edge detection
         PRD_Edge prd_edge;
-        if (edge_distance[i] > MAX_EDGE_DISTANCE)
+        if (edge_distance[i] > optixLaunchParams.parameters.MAX_EDGE_DISTANCE)
             continue;
         prd_edge.edge_distance = edge_distance[i];
         prd_edge.is_edge = false;
@@ -353,7 +353,7 @@ extern "C" __global__ void __closesthit__edge()
     PRD_Edge &prd_edge = *getPRD<PRD_Edge>();
     float x = prd_edge.edge_distance - hit_distance;
     float edge_angle;
-    edge_angle = atan2f(EDGE_DETECTION_DEPTH, x);
+    edge_angle = atan2f(optixLaunchParams.parameters.EDGE_DETECTION_DEPTH, x);
     // printf("%f\n", edge_angle);
-    edge_angle <= MAX_EDGE_ANGLE ? prd_edge.is_edge = true : 0;
+    edge_angle <= optixLaunchParams.parameters.MAX_EDGE_ANGLE ? prd_edge.is_edge = true : 0;
 }
