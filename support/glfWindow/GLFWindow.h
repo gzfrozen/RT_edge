@@ -93,9 +93,9 @@ struct GLFWindow
   /*! the glfw window handle */
   GLFWwindow *handle{nullptr};
 
-  float xscale = 1.f;
-  float yscale = 1.f;
-  bool ui_on = false;
+  float xscale{1.f};
+  float yscale{1.f};
+  bool ui_on{false};
 };
 
 struct CameraFrame
@@ -409,6 +409,12 @@ struct GLFCameraWindow : public GLFWindow
     cameraFrame.setOrientation(camera_from, camera_at, camera_up);
     enableInspectMode();
     enableFlyMode();
+  }
+
+  void before_render() override
+  {
+    if (cameraFrameManip)
+      cameraFrameManip->move_wsad();
   }
 
   void enableFlyMode();

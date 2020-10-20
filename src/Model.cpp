@@ -148,8 +148,7 @@ int loadTexture(Model *model,
 
 Model *loadOBJ(const std::string &objFile)
 {
-  std::cout << GDT_TERMINAL_YELLOW;
-  std::cout << "Loading obj file ..." << std::endl;
+  std::cout << GDT_TERMINAL_YELLOW << "Loading obj file ..." << GDT_TERMINAL_DEFAULT << std::endl;
   Model *model = new Model;
 
   const std::string modelDir = objFile.substr(0, objFile.rfind('/') + 1);
@@ -176,8 +175,8 @@ Model *loadOBJ(const std::string &objFile)
     throw std::runtime_error("could not parse materials ...");
 
   int numShapes = shapes.size();
-  std::cout << "Done loading obj file - found " << numShapes << " shapes with " << materials.size() << " materials" << std::endl;
-  std::cout << "Loading shapes ..." << std::endl;
+  std::cout << GDT_TERMINAL_YELLOW << "Done loading obj file - found " << numShapes << " shapes with " << materials.size() << " materials" << GDT_TERMINAL_DEFAULT << std::endl;
+  std::cout << GDT_TERMINAL_YELLOW << "Loading shapes ..." << GDT_TERMINAL_DEFAULT << std::endl;
 
   for (int shapeID = 0; shapeID < numShapes; shapeID++)
   {
@@ -220,10 +219,10 @@ Model *loadOBJ(const std::string &objFile)
     }
     if (shapeID % 100 == 99)
     {
-      std::cout << "Done loading " << shapeID + 1 << " shapes in total " << numShapes << " shapes" << std::endl;
+      std::cout << GDT_TERMINAL_YELLOW << "Done loading " << shapeID + 1 << " shapes in total " << numShapes << " shapes" << GDT_TERMINAL_DEFAULT << std::endl;
     }
   }
-  std::cout << "Done all " << std::endl;
+  std::cout << GDT_TERMINAL_YELLOW << "Done all " << GDT_TERMINAL_DEFAULT << std::endl;
 
   // of course, you should be using tbb::parallel_for for stuff
   // like this:
@@ -231,7 +230,6 @@ Model *loadOBJ(const std::string &objFile)
     for (auto vtx : mesh->vertex)
       model->bounds.extend(vtx);
 
-  std::cout << "created a total of " << model->meshes.size() << " meshes" << std::endl;
-  std::cout << GDT_TERMINAL_DEFAULT;
+  std::cout << GDT_TERMINAL_YELLOW << "created a total of " << model->meshes.size() << " meshes" << GDT_TERMINAL_DEFAULT << std::endl;
   return model;
 }

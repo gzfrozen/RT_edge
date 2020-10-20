@@ -14,7 +14,7 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include <SampleRenderer.hpp>
+#include <Renderer.hpp>
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
 
@@ -51,7 +51,7 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
 
 /*! constructor - performs all setup, including initializing
     optix, creates module, pipeline, programs, SBT, etc. */
-SampleRenderer::SampleRenderer(const Model *model, const QuadLight &light)
+Renderer::Renderer(const Model *model, const QuadLight &light)
     : model(model)
 {
   initOptix();
@@ -93,7 +93,7 @@ SampleRenderer::SampleRenderer(const Model *model, const QuadLight &light)
   std::cout << GDT_TERMINAL_DEFAULT;
 }
 
-void SampleRenderer::createTextures()
+void Renderer::createTextures()
 {
   int numTextures = (int)model->textures.size();
 
@@ -147,7 +147,7 @@ void SampleRenderer::createTextures()
   }
 }
 
-OptixTraversableHandle SampleRenderer::buildAccel()
+OptixTraversableHandle Renderer::buildAccel()
 {
   const int numMeshes = (int)model->meshes.size();
   vertexBuffer.resize(numMeshes);
@@ -284,7 +284,7 @@ OptixTraversableHandle SampleRenderer::buildAccel()
 }
 
 /*! helper function that initializes optix and checks for errors */
-void SampleRenderer::initOptix()
+void Renderer::initOptix()
 {
   std::cout << "#osc: initializing optix..." << std::endl;
 
@@ -317,7 +317,7 @@ static void context_log_cb(unsigned int level,
 
 /*! creates and configures a optix device context (in this simple
       example, only for the primary GPU device) */
-void SampleRenderer::createContext()
+void Renderer::createContext()
 {
   // for this sample, do everything on one device
   const int deviceID = 0;
@@ -338,7 +338,7 @@ void SampleRenderer::createContext()
 /*! creates the module that contains all the programs we are going
       to use. we use modules from multiple .cu files, came from 
       multiple embedded ptx string which need to be loaded manually*/
-void SampleRenderer::createModule()
+void Renderer::createModule()
 {
   moduleCompileOptions.maxRegisterCount = OPTIX_COMPILE_DEFAULT_MAX_REGISTER_COUNT;
   moduleCompileOptions.optLevel = OPTIX_COMPILE_OPTIMIZATION_DEFAULT;
@@ -362,9 +362,9 @@ void SampleRenderer::createModule()
   ptxCode["anyHit"] = anyHit;
   ptxCode["missHit"] = missHit;
 
-  for (auto i : ptxCode)
+  for (auto [name, code] : ptxCode)
   {
-    const std::string ptx = reinterpret_cast<const char *>(i.second);
+    const std::string ptx = reinterpret_cast<const char *>(code);
     char log[2048];
     size_t sizeof_log = sizeof(log);
     OptixModule m;
@@ -377,12 +377,12 @@ void SampleRenderer::createModule()
                                          &m));
     if (sizeof_log > 1)
       PRINT(log);
-    module[i.first] = m;
+    module[name] = m;
   }
 }
 
 /*! does all setup for the raygen program(s) we are going to use */
-void SampleRenderer::createRaygenPrograms()
+void Renderer::createRaygenPrograms()
 {
   // we do a single ray gen program in this example:
   raygenPGs.resize(1);
@@ -407,7 +407,7 @@ void SampleRenderer::createRaygenPrograms()
 }
 
 /*! does all setup for the miss program(s) we are going to use */
-void SampleRenderer::createMissPrograms()
+void Renderer::createMissPrograms()
 {
   missPGs.resize(RAY_TYPE_COUNT);
 
@@ -493,7 +493,7 @@ void SampleRenderer::createMissPrograms()
 }
 
 /*! does all setup for the hitgroup program(s) we are going to use */
-void SampleRenderer::createHitgroupPrograms()
+void Renderer::createHitgroupPrograms()
 {
   // for this simple example, we set up a single hit group
   hitgroupPGs.resize(RAY_TYPE_COUNT);
@@ -588,7 +588,7 @@ void SampleRenderer::createHitgroupPrograms()
 }
 
 /*! assembles the full pipeline of all programs */
-void SampleRenderer::createPipeline()
+void Renderer::createPipeline()
 {
   std::vector<OptixProgramGroup> programGroups;
   for (auto pg : raygenPGs)
@@ -630,7 +630,7 @@ void SampleRenderer::createPipeline()
 }
 
 /*! constructs the shader binding table */
-void SampleRenderer::buildSBT()
+void Renderer::buildSBT()
 {
   // ------------------------------------------------------------------
   // build raygen records
@@ -700,7 +700,7 @@ void SampleRenderer::buildSBT()
 }
 
 /*! render one frame */
-void SampleRenderer::render()
+void Renderer::render()
 {
   // sanity check: make sure we launch only after first resize is
   // already done:
@@ -728,7 +728,7 @@ void SampleRenderer::render()
 }
 
 /*! set camera to render with */
-void SampleRenderer::setCamera(const Camera &camera)
+void Renderer::setCamera(const Camera &camera)
 {
   launchParams.camera.camera_type = PINHOLE;
   lastSetCamera = camera;
@@ -742,7 +742,7 @@ void SampleRenderer::setCamera(const Camera &camera)
 }
 
 /*! set sphere camera to render with */
-void SampleRenderer::setEnvCamera(const Camera &camera)
+void Renderer::setEnvCamera(const Camera &camera)
 {
   launchParams.camera.camera_type = ENV;
   lastSetCamera = camera;
@@ -759,19 +759,19 @@ void SampleRenderer::setEnvCamera(const Camera &camera)
 }
 
 /*! set ray type used in __raygen__ */
-void SampleRenderer::setLaunchRayType(const int &launch_ray_type)
+void Renderer::setLaunchRayType(const int &launch_ray_type)
 {
   launchParams.parameters.LAUNCH_RAY_TYPE = launch_ray_type;
 }
 
-/*! set sphere camera to render with */
-LaunchParams &SampleRenderer::getLaunchParams()
+/*! return the pointer of launch parameters */
+LaunchParams *Renderer::getLaunchParams()
 {
-  return launchParams;
+  return &launchParams;
 }
 
 /*! resize frame buffer to given resolution */
-void SampleRenderer::resize(const vec2i &newSize)
+void Renderer::resize(const vec2i &newSize)
 {
   // if window minimized
   if (newSize.x == 0 || newSize.y == 0)
@@ -789,7 +789,7 @@ void SampleRenderer::resize(const vec2i &newSize)
 }
 
 /*! download the rendered color buffer */
-void SampleRenderer::downloadPixels(uint32_t h_pixels[])
+void Renderer::downloadPixels(uint32_t h_pixels[])
 {
   colorBuffer.download(h_pixels,
                        launchParams.frame.size.x * launchParams.frame.size.y);

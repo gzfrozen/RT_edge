@@ -1,12 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 project(RT_edge LANGUAGES CXX CUDA)
 
-if (MSVC)
-    # set source code format to UTF-8 
-    # suppress warning caused by system language
-    add_compile_options(-Xcompiler "/utf-8")
-endif()
-
 # ------------------------------------------------------------------
 # first, include gdt project to do some general configuration stuff
 # (build modes, glut, optix, etc)
@@ -122,9 +116,10 @@ add_custom_command(
 add_executable(RT_edge 
     ${output_file}   
     ${SRC_DIR}/main.cpp 
-    ${SRC_DIR}/SampleRenderer.cpp 
+    ${SRC_DIR}/Renderer.cpp 
     ${SRC_DIR}/Model.cpp 
     ${SRC_DIR}/MainWindow.cpp 
+    ${SRC_DIR}/JSONconfig.cpp 
     )
 add_dependencies(RT_edge CudaPTX)
 target_include_directories(RT_edge PRIVATE ${INCLUDE_DIR})
@@ -155,8 +150,9 @@ target_precompile_headers(RT_edge PRIVATE
   <GL/gl.h>
  [["gdt/math/vec.h"]]
  [["gdt/math/AffineSpace.h"]]
- [["tiny_obj_loader.h"]]
- [["stb_image.h"]]
+ <tiny_obj_loader.h>
+ <stb_image.h>
+ <json.hpp>
  )
 
 if(APPLE)

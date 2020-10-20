@@ -38,7 +38,7 @@ struct Camera
       context, module, programs, pipeline, SBT, etc, and perform a
       valid launch that renders some pixel (using a simple test
       pattern, in this case */
-class SampleRenderer
+class Renderer
 {
   // ------------------------------------------------------------------
   // publicly accessible interface
@@ -46,7 +46,7 @@ class SampleRenderer
 public:
   /*! constructor - performs all setup, including initializing
       optix, creates module, pipeline, programs, SBT, etc. */
-  SampleRenderer(const Model *model, const QuadLight &light);
+  Renderer(const Model *model, const QuadLight &light);
 
   /*! render one frame */
   void render();
@@ -66,8 +66,8 @@ public:
   /*! set sphere camera to render with */
   void setLaunchRayType(const int &launch_ray_type);
 
-  /*! return the reference of launch parameters */
-  LaunchParams &getLaunchParams();
+  /*! return the pointer of launch parameters */
+  LaunchParams *getLaunchParams();
 
 protected:
   // ------------------------------------------------------------------

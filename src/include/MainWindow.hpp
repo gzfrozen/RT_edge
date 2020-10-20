@@ -1,7 +1,8 @@
 #pragma once
 
-#include <SampleRenderer.hpp>
+#include <Renderer.hpp>
 #include <GLFWindow.h>
+#include <JSONconfig.hpp>
 
 class MainWindow : public GLFCameraWindow
 {
@@ -11,8 +12,10 @@ public:
                const int &launch_ray_type,
                const Camera &camera,
                const QuadLight &light,
-               const float worldScale);
+               const float worldScale,
+               const std::string &config_path);
     ~MainWindow();
+    void applyConfig();
 
 private:
     inline Camera get_camera() const
@@ -22,16 +25,20 @@ private:
                       cameraFrame.get_up(),
                       cameraFrame.get_frame()};
     }
-    void before_render() override;
+    /*! rend one frame */
     void render() override;
+    /*! pass the frame to opengl */
     void draw() override;
     void resize(const vec2i &newSize) override;
 
     /*! draw GUI layout */
-    void draw_gui();
+    void draw_gui() override;
 
     vec2i fbSize;
     GLuint fbTexture{0};
-    SampleRenderer sample;
+    Renderer renderer;
     std::vector<uint32_t> pixels;
+
+    LaunchParams *_params;  // Control parameters used by gui
+    JSONconfig json_config; // JSON config file manip
 };

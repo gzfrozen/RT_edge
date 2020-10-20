@@ -14,12 +14,9 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include <SampleRenderer.hpp>
-#include <MainWindow.hpp>
-
 // our helper library for window handling
-#include <GLFWindow.h>
 #include <GL/gl.h>
+#include <MainWindow.hpp>
 
 /*! main entry point to this example - initially optix, print hello
     world, then exit */
@@ -46,8 +43,11 @@ extern "C" int main(int ac, char **av)
         // camera knows how much to move for any given user interaction:
         const float worldScale = length(model->bounds.span());
 
-        MainWindow *window = new MainWindow("Optix 7 Example",
-                                            model, launch_ray_type, camera, light, worldScale);
+        // JSON config file path
+        const std::string config_path = "config.json";
+
+        MainWindow *window = new MainWindow("RT Edge",
+                                            model, launch_ray_type, camera, light, worldScale, config_path);
         window->run();
     }
     catch (std::runtime_error &e)

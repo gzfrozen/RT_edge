@@ -9,14 +9,18 @@
 // Gui control parameters
 #include <LaunchParams.hpp>
 
+// JSON config
+#include <JSONconfig.hpp>
+
 MainWindow::MainWindow(const std::string &title,
                        const Model *model,
                        const int &launch_ray_type,
                        const Camera &camera,
                        const QuadLight &light,
-                       const float worldScale)
+                       const float worldScale,
+                       const std::string &config_path)
     : GLFCameraWindow(title, launch_ray_type, camera.from, camera.at, camera.up, worldScale),
-      sample(model, light)
+      renderer(model, light)
 {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -29,10 +33,18 @@ MainWindow::MainWindow(const std::string &title,
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
+    //ImGuiStyle style = ImGui::GetStyle();
 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(handle, true);
     ImGui_ImplOpenGL2_Init();
+
+    // Get control parameters
+    _params = renderer.getLaunchParams();
+
+    // Read configure file on start
+    json_config = JSONconfig(config_path, _params, get_camera());
+    applyConfig();
 }
 
 MainWindow::~MainWindow()
@@ -43,34 +55,28 @@ MainWindow::~MainWindow()
     GLFWindow::~GLFWindow();
 }
 
-void MainWindow::before_render()
-{
-    if (cameraFrameManip)
-        cameraFrameManip->move_wsad();
-}
-
 void MainWindow::render()
 {
     if (cameraFrame.modified)
     {
-        sample.setLaunchRayType(ray_type);
+        renderer.setLaunchRayType(ray_type);
         int cameraType = cameraFrame.get_camera_type();
         if (cameraType == PINHOLE)
         {
-            sample.setCamera(get_camera());
+            renderer.setCamera(get_camera());
         }
         else if (cameraType == ENV)
         {
-            sample.setEnvCamera(get_camera());
+            renderer.setEnvCamera(get_camera());
         }
         cameraFrame.modified = false;
     }
-    sample.render();
+    renderer.render();
 }
 
 void MainWindow::draw()
 {
-    sample.downloadPixels(pixels.data());
+    renderer.downloadPixels(pixels.data());
     if (fbTexture == 0)
         glGenTextures(1, &fbTexture);
 
@@ -119,7 +125,7 @@ void MainWindow::draw()
 void MainWindow::resize(const vec2i &newSize)
 {
     fbSize = newSize;
-    sample.resize(newSize);
+    renderer.resize(newSize);
     pixels.resize(newSize.x * newSize.y);
 }
 
@@ -134,12 +140,30 @@ void MainWindow::draw_gui()
     {
         if (ui_on)
         {
-            static LaunchParams &params = sample.getLaunchParams();
             ImGui::Begin("Settings"); // Create a window called "Hello, world!" and append into it.
             ImGui::SetWindowFontScale(xscale);
 
-            ImGui::SliderFloat("float", &params.parameters.MAX_EDGE_DISTANCE, 0.0f, 1.0f); // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::InputFloat("test", &params.parameters.MAX_EDGE_DISTANCE);
+            ImGui::InputInt("Number of light samples", &_params->parameters.NUM_LIGHT_SAMPLES, 1, 5);
+            ImGui::InputInt("Number of pixel samples", &_params->parameters.NUM_PIXEL_SAMPLES, 1, 5);
+
+            ImGui::SliderFloat("Wave Length", &_params->parameters.WAVE_LENGTH, 0.0f, 1000.0f); // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::SliderFloat("Edge detection depth", &_params->parameters.EDGE_DETECTION_DEPTH, 0.0f, 1e-3f, "%e");
+            ImGui::SliderFloat("Max edge distance", &_params->parameters.MAX_EDGE_DISTANCE, 0.0f, 1.0f);
+            ImGui::SliderFloat("Max edge angle", &_params->parameters.MAX_EDGE_ANGLE, 0.0f, M_PI);
+
+            ImGui::NewLine();
+            if (ImGui::Button("Load")) // Buttons return true when clicked (most widgets return true when edited/activated)
+            {
+                applyConfig();
+            }
+            ImGui::SameLine();
+            // ImGui::SameLine();
+            if (ImGui::Button("Save"))
+            {
+                json_config.generateConfig(get_camera());
+                json_config.saveFile();
+            }
+
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
         }
@@ -148,4 +172,13 @@ void MainWindow::draw_gui()
     // Rendering
     ImGui::Render();
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
+}
+
+void MainWindow::applyConfig()
+{
+    json_config.readFile();
+    json_config.applyConfig();
+    Camera configCamera = json_config.returnCamera();
+    cameraFrame.setOrientation(configCamera.from, configCamera.at, configCamera.up);
+    ray_type = json_config.returnRayType();
 }
