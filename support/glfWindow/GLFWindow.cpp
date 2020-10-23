@@ -16,6 +16,9 @@
 
 #include "GLFWindow.h"
 
+// For better GUI interaction
+#include <imgui.h>
+
 using namespace gdt;
 
 static void glfw_error_callback(int error, const char *description)
@@ -47,7 +50,7 @@ static void glfwindow_key_cb(GLFWwindow *window, int key, int scancode, int acti
 {
   GLFWindow *gw = static_cast<GLFWindow *>(glfwGetWindowUserPointer(window));
   assert(gw);
-  if (!gw->ui_on || key == GLFW_KEY_ESCAPE)
+  if (!ImGui::IsAnyItemActive())
   {
     if (action == GLFW_PRESS)
     {
@@ -75,7 +78,7 @@ static void glfwindow_mouseButton_cb(GLFWwindow *window, int button, int action,
   assert(gw);
   // double x, y;
   // glfwGetCursorPos(window,&x,&y);
-  if (!gw->ui_on)
+  if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
   {
     gw->mouseButton(button, action, mods);
   }

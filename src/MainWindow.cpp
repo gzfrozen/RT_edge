@@ -140,7 +140,7 @@ void MainWindow::draw_gui()
     {
         if (ui_on)
         {
-            ImGui::Begin("Settings"); // Create a window called "Hello, world!" and append into it.
+            ImGui::Begin("Settings", &ui_on); // Create a window called "Hello, world!" and append into it.
             ImGui::SetWindowFontScale(xscale);
 
             ImGui::InputInt("Number of light samples", &_params->parameters.NUM_LIGHT_SAMPLES, 1, 5);
