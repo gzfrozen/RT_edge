@@ -23,7 +23,7 @@ This code requires [CMake](https://cmake.org/download/) (version 3.18 or higher)
  - [CMake](https://cmake.org/download/) (version 3.18 or higher)
  - [CUDA 10.x or CUDA 11](https://developer.nvidia.com/cuda-downloads)
  - Latest Nvidia GPU Driver
- - [OptiX 7.1 SDK](https://developer.nvidia.com/designworks/optix/download) 
+- [OptiX 7.2 SDK](https://developer.nvidia.com/designworks/optix/download)
  - a 3D geometry object file
 	 - recommend Crytek Sponza, BMW on [https://casual-effects.com/data/](https://casual-effects.com/data/)
 
@@ -45,6 +45,7 @@ This code requires [CMake](https://cmake.org/download/) (version 3.18 or higher)
 
 - Use left, middle, right mouse button to drag and scroll
 - Press w, s, a, d to move
+- Press ESC to toggle GUI parameter control pannel
 - Press =, - to control drag speed, alt + =, - to control move speed
 - Press p, l to switch between pin-hole camera and 360 degree camera (not working properly at the moment)
 - Press r, t to switch between normal rendering mode and phase detection mode
