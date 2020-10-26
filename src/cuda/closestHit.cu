@@ -96,6 +96,7 @@ __forceinline__ __host__ __device__ float point_to_line(const vec3f &AP, const v
 {
     return length(cross(AP, AB)) / length(AB);
 }
+
 //------------------------------------------------------------------------------
 // closest hit programs.
 //
@@ -322,22 +323,22 @@ extern "C" __global__ void __closesthit__mono()
     for (int i = 0; i < 3; i++)
     {
         // per ray date for edge detection
-        PRD_Edge prd_edge;
         if (edge_distance[i] > optixLaunchParams.parameters.MAX_EDGE_DISTANCE)
             continue;
-        prd_edge.edge_distance = edge_distance[i];
-        prd_edge.is_edge = false;
+        PRD_Edge prd_edge;
         // the values we store the PRD_Edge pointer in:
         uint32_t u0, u1;
         packPointer(&prd_edge, u0, u1);
+        float tmax = edge_distance[i] - optixLaunchParams.parameters.EDGE_DETECTION_DEPTH / tanf(optixLaunchParams.parameters.MAX_EDGE_ANGLE);
+        // printf("%f\n", tmax);
         optixTrace(optixLaunchParams.traversable,
                    surfPos - surfDepth,
                    edge_direction[i],
-                   0,                         // tmin
-                   edge_distance[i] * 1.001f, // tmax
-                   0.0f,                      // rayTime
+                   0.0f, // tmin
+                   tmax, // tmax
+                   0.0f, // rayTime
                    OptixVisibilityMask(255),
-                   OPTIX_RAY_FLAG_DISABLE_ANYHIT,
+                   OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
                    EDGE_RAY_TYPE,  // SBT offset
                    RAY_TYPE_COUNT, // SBT stride
                    EDGE_RAY_TYPE,  // missSBTIndex
@@ -349,11 +350,5 @@ extern "C" __global__ void __closesthit__mono()
 
 extern "C" __global__ void __closesthit__edge()
 {
-    const float hit_distance = optixGetRayTmax();
-    PRD_Edge &prd_edge = *getPRD<PRD_Edge>();
-    float x = prd_edge.edge_distance - hit_distance;
-    float edge_angle;
-    edge_angle = atan2f(optixLaunchParams.parameters.EDGE_DETECTION_DEPTH, x);
-    // printf("%f\n", edge_angle);
-    edge_angle <= optixLaunchParams.parameters.MAX_EDGE_ANGLE ? prd_edge.is_edge = true : 0;
+    /* not going to be used ... */
 }

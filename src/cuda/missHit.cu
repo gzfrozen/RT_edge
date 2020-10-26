@@ -35,4 +35,7 @@ extern "C" __global__ void __miss__mono()
 
 extern "C" __global__ void __miss__edge()
 {
+    // we didn't hit anything, so it is not the edge
+    PRD_Edge &prd_edge = *getPRD<PRD_Edge>();
+    prd_edge.is_edge = false;
 }

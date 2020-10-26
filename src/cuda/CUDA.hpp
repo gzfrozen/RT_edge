@@ -25,8 +25,7 @@ struct PRD
 /*! per-ray data for edge detection */
 struct PRD_Edge
 {
-    float edge_distance;
-    bool is_edge;
+    bool is_edge{true};
 };
 
 static __forceinline__ __device__ void *unpackPointer(uint32_t i0, uint32_t i1)
