@@ -329,15 +329,21 @@ extern "C" __global__ void __closesthit__mono()
         // the values we store the PRD_Edge pointer in:
         uint32_t u0, u1;
         packPointer(&prd_edge, u0, u1);
+        float tmin = edge_distance[i] - optixLaunchParams.parameters.EDGE_DETECTION_DEPTH / tanf(optixLaunchParams.parameters.MIN_EDGE_ANGLE);
         float tmax = edge_distance[i] - optixLaunchParams.parameters.EDGE_DETECTION_DEPTH / tanf(optixLaunchParams.parameters.MAX_EDGE_ANGLE);
-        // printf("%f\n", tmax);
+        tmin > 0 ? tmin = tmin : 0;
+        tmax > 0 ? tmax = tmax : 0;
+
         optixTrace(optixLaunchParams.traversable,
                    surfPos - surfDepth,
                    edge_direction[i],
-                   0.0f, // tmin
+                   tmin, // tmin
                    tmax, // tmax
                    0.0f, // rayTime
                    OptixVisibilityMask(255),
+                   // For edge rays: skip any/closest hit shaders and terminate on first
+                   // intersection with anything. The miss shader is used to mark the point
+                   // which is not edge.
                    OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
                    EDGE_RAY_TYPE,  // SBT offset
                    RAY_TYPE_COUNT, // SBT stride

@@ -120,13 +120,13 @@ protected:
 
   /*! @{ the pipeline we're building */
   OptixPipeline pipeline;
-  OptixPipelineCompileOptions pipelineCompileOptions;
-  OptixPipelineLinkOptions pipelineLinkOptions;
+  OptixPipelineCompileOptions pipelineCompileOptions{};
+  OptixPipelineLinkOptions pipelineLinkOptions{};
   /*! @} */
 
   /*! @{ the module that contains out device programs */
   std::unordered_map<std::string, OptixModule> module;
-  OptixModuleCompileOptions moduleCompileOptions;
+  OptixModuleCompileOptions moduleCompileOptions{};
   /* @} */
 
   /*! vector of all our program(group)s, and the SBT built around

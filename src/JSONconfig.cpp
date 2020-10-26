@@ -90,19 +90,28 @@ void JSONconfig::generateConfig(const Camera &camera)
     config["parameters"]["WAVE_LENGTH"] = _params->parameters.WAVE_LENGTH;
     config["parameters"]["EDGE_DETECTION_DEPTH"] = _params->parameters.EDGE_DETECTION_DEPTH;
     config["parameters"]["MAX_EDGE_DISTANCE"] = _params->parameters.MAX_EDGE_DISTANCE;
+    config["parameters"]["MIN_EDGE_ANGLE"] = _params->parameters.MIN_EDGE_ANGLE;
     config["parameters"]["MAX_EDGE_ANGLE"] = _params->parameters.MAX_EDGE_ANGLE;
 }
 
 void JSONconfig::applyConfig() const
 {
-    // Parameters which are directly updated into memory
-    // _params->parameters.LAUNCH_RAY_TYPE = config["parameters"]["LAUNCH_RAY_TYPE"];
-    _params->parameters.NUM_LIGHT_SAMPLES = config["parameters"]["NUM_LIGHT_SAMPLES"];
-    _params->parameters.NUM_PIXEL_SAMPLES = config["parameters"]["NUM_PIXEL_SAMPLES"];
-    _params->parameters.WAVE_LENGTH = config["parameters"]["WAVE_LENGTH"];
-    _params->parameters.EDGE_DETECTION_DEPTH = config["parameters"]["EDGE_DETECTION_DEPTH"];
-    _params->parameters.MAX_EDGE_DISTANCE = config["parameters"]["MAX_EDGE_DISTANCE"];
-    _params->parameters.MAX_EDGE_ANGLE = config["parameters"]["MAX_EDGE_ANGLE"];
+    try
+    {
+        // Parameters which are directly updated into memory
+        _params->parameters.NUM_LIGHT_SAMPLES = config["parameters"]["NUM_LIGHT_SAMPLES"];
+        _params->parameters.NUM_PIXEL_SAMPLES = config["parameters"]["NUM_PIXEL_SAMPLES"];
+        _params->parameters.WAVE_LENGTH = config["parameters"]["WAVE_LENGTH"];
+        _params->parameters.EDGE_DETECTION_DEPTH = config["parameters"]["EDGE_DETECTION_DEPTH"];
+        _params->parameters.MAX_EDGE_DISTANCE = config["parameters"]["MAX_EDGE_DISTANCE"];
+        _params->parameters.MIN_EDGE_ANGLE = config["parameters"]["MIN_EDGE_ANGLE"];
+        _params->parameters.MAX_EDGE_ANGLE = config["parameters"]["MAX_EDGE_ANGLE"];
+    }
+    catch (std::exception e)
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Configure file " << path << " is broken" << e.what() << std::endl;
+    }
 }
 
 Camera JSONconfig::returnCamera() const

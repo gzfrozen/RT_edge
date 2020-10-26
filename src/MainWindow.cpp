@@ -147,8 +147,9 @@ void MainWindow::draw_gui()
             ImGui::InputInt("Number of pixel samples", &_params->parameters.NUM_PIXEL_SAMPLES, 1, 5);
 
             ImGui::SliderFloat("Wave Length", &_params->parameters.WAVE_LENGTH, 0.0f, 1000.0f); // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::SliderFloat("Edge detection depth", &_params->parameters.EDGE_DETECTION_DEPTH, 0.0f, 1e-3f, "%e");
+            ImGui::SliderFloat("Edge detection depth", &_params->parameters.EDGE_DETECTION_DEPTH, 1e-3f, 5.f, "%e");
             ImGui::SliderFloat("Max edge distance", &_params->parameters.MAX_EDGE_DISTANCE, 0.0f, 1.0f);
+            ImGui::SliderFloat("Min edge angle", &_params->parameters.MIN_EDGE_ANGLE, 0.0f, _params->parameters.MAX_EDGE_ANGLE);
             ImGui::SliderFloat("Max edge angle", &_params->parameters.MAX_EDGE_ANGLE, 0.0f, M_PI);
 
             ImGui::NewLine();

@@ -72,6 +72,7 @@ struct LaunchParams
 
         float EDGE_DETECTION_DEPTH{4e-6f};
         float MAX_EDGE_DISTANCE{2e-1f};
-        float MAX_EDGE_ANGLE{M_PI * 1.f / 6.f};
+        float MIN_EDGE_ANGLE{M_PI / 6.f};
+        float MAX_EDGE_ANGLE{M_PI / 2.f};
     } parameters;
 };
