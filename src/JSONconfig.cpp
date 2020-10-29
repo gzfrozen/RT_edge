@@ -99,13 +99,13 @@ void JSONconfig::applyConfig() const
     try
     {
         // Parameters which are directly updated into memory
-        _params->parameters.NUM_LIGHT_SAMPLES = config["parameters"]["NUM_LIGHT_SAMPLES"];
-        _params->parameters.NUM_PIXEL_SAMPLES = config["parameters"]["NUM_PIXEL_SAMPLES"];
-        _params->parameters.WAVE_LENGTH = config["parameters"]["WAVE_LENGTH"];
-        _params->parameters.EDGE_DETECTION_DEPTH = config["parameters"]["EDGE_DETECTION_DEPTH"];
-        _params->parameters.MAX_EDGE_DISTANCE = config["parameters"]["MAX_EDGE_DISTANCE"];
-        _params->parameters.MIN_EDGE_ANGLE = config["parameters"]["MIN_EDGE_ANGLE"];
-        _params->parameters.MAX_EDGE_ANGLE = config["parameters"]["MAX_EDGE_ANGLE"];
+        _params->parameters.NUM_LIGHT_SAMPLES = config["parameters"]["NUM_LIGHT_SAMPLES"].get<int>();
+        _params->parameters.NUM_PIXEL_SAMPLES = config["parameters"]["NUM_PIXEL_SAMPLES"].get<int>();
+        _params->parameters.WAVE_LENGTH = config["parameters"]["WAVE_LENGTH"].get<float>();
+        _params->parameters.EDGE_DETECTION_DEPTH = config["parameters"]["EDGE_DETECTION_DEPTH"].get<float>();
+        _params->parameters.MAX_EDGE_DISTANCE = config["parameters"]["MAX_EDGE_DISTANCE"].get<float>();
+        _params->parameters.MIN_EDGE_ANGLE = config["parameters"]["MIN_EDGE_ANGLE"].get<float>();
+        _params->parameters.MAX_EDGE_ANGLE = config["parameters"]["MAX_EDGE_ANGLE"].get<float>();
     }
     catch (std::exception e)
     {
@@ -118,21 +118,21 @@ Camera JSONconfig::returnCamera() const
 {
     Camera camera;
     camera.from = vec3f{
-        config["camera"]["from"]["x"],
-        config["camera"]["from"]["y"],
-        config["camera"]["from"]["z"]};
+        config["camera"]["from"]["x"].get<float>(),
+        config["camera"]["from"]["y"].get<float>(),
+        config["camera"]["from"]["z"].get<float>()};
     camera.at = vec3f{
-        config["camera"]["at"]["x"],
-        config["camera"]["at"]["y"],
-        config["camera"]["at"]["z"]};
+        config["camera"]["at"]["x"].get<float>(),
+        config["camera"]["at"]["y"].get<float>(),
+        config["camera"]["at"]["z"].get<float>()};
     camera.up = vec3f{
-        config["camera"]["up"]["x"],
-        config["camera"]["up"]["y"],
-        config["camera"]["up"]["z"]};
+        config["camera"]["up"]["x"].get<float>(),
+        config["camera"]["up"]["y"].get<float>(),
+        config["camera"]["up"]["z"].get<float>()};
     return camera;
 }
 
 int JSONconfig::returnRayType() const
 {
-    return config["parameters"]["LAUNCH_RAY_TYPE"];
+    return config["parameters"]["LAUNCH_RAY_TYPE"].get<int>();
 }

@@ -63,16 +63,16 @@ struct LaunchParams
     // parameters
     struct
     {
-        int LAUNCH_RAY_TYPE;
+        int LAUNCH_RAY_TYPE{0};
 
         int NUM_LIGHT_SAMPLES{16};
         int NUM_PIXEL_SAMPLES{1};
 
         float WAVE_LENGTH{100.f};
 
-        float EDGE_DETECTION_DEPTH{4e-6f};
+        float EDGE_DETECTION_DEPTH{5e-2f};
         float MAX_EDGE_DISTANCE{2e-1f};
-        float MIN_EDGE_ANGLE{M_PI / 6.f};
+        float MIN_EDGE_ANGLE{0.f};
         float MAX_EDGE_ANGLE{M_PI / 2.f};
     } parameters;
 };

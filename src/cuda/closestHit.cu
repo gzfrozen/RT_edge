@@ -331,8 +331,8 @@ extern "C" __global__ void __closesthit__mono()
         packPointer(&prd_edge, u0, u1);
         float tmin = edge_distance[i] - optixLaunchParams.parameters.EDGE_DETECTION_DEPTH / tanf(optixLaunchParams.parameters.MIN_EDGE_ANGLE);
         float tmax = edge_distance[i] - optixLaunchParams.parameters.EDGE_DETECTION_DEPTH / tanf(optixLaunchParams.parameters.MAX_EDGE_ANGLE);
-        tmin > 0 ? tmin = tmin : 0;
-        tmax > 0 ? tmax = tmax : 0;
+        tmin = fmaxf(tmin, 0.f);
+        tmax = fmaxf(tmax, 0.f);
 
         optixTrace(optixLaunchParams.traversable,
                    surfPos - surfDepth,
