@@ -1,5 +1,12 @@
 #pragma once
 
+enum renderer_type
+{
+    FAST,
+    CLASSIC,
+    RENDERER_TYPE_COUNT
+};
+
 enum camera_type
 {
     PINHOLE,

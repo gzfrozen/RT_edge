@@ -398,13 +398,12 @@ protected:
 struct GLFCameraWindow : public GLFWindow
 {
   GLFCameraWindow(const std::string &title,
-                  const int &launch_ray_type,
                   const vec3f &camera_from,
                   const vec3f &camera_at,
                   const vec3f &camera_up,
                   const float worldScale)
       : GLFWindow(title),
-        cameraFrame(worldScale), ray_type(launch_ray_type)
+        cameraFrame(worldScale)
   {
     cameraFrame.setOrientation(camera_from, camera_at, camera_up);
     enableInspectMode();
@@ -434,22 +433,30 @@ struct GLFCameraWindow : public GLFWindow
     {
     case GLFW_KEY_ESCAPE:
       ui_on = !ui_on;
-      cameraFrame.modified = true;
       break;
     case 'e':
     case 'E':
+      renderer_type = FAST;
       ray_type = MONO_RAY_TYPE;
       cameraFrame.modified = true;
       std::cout << "Entering 'edge' mode" << std::endl;
       break;
+    case 'q':
+    case 'Q':
+      renderer_type = CLASSIC;
+      cameraFrame.modified = true;
+      std::cout << "Entering 'classic' mode" << std::endl;
+      break;
     case 'r':
     case 'R':
+      renderer_type = FAST;
       ray_type = RADIANCE_RAY_TYPE;
       cameraFrame.modified = true;
       std::cout << "Entering 'rendering' mode" << std::endl;
       break;
     case 't':
     case 'T':
+      renderer_type = FAST;
       ray_type = PHASE_RAY_TYPE;
       cameraFrame.modified = true;
       std::cout << "Entering 'phase detection' mode" << std::endl;
@@ -558,7 +565,8 @@ struct GLFCameraWindow : public GLFWindow
   std::shared_ptr<CameraFrameManip> cameraFrameManip;
   std::shared_ptr<CameraFrameManip> inspectModeManip;
   std::shared_ptr<CameraFrameManip> flyModeManip;
-  int ray_type;
+  int renderer_type{FAST};
+  int ray_type{RADIANCE_RAY_TYPE};
 };
 
 // ------------------------------------------------------------------

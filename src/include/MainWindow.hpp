@@ -9,7 +9,6 @@ class MainWindow : public GLFCameraWindow
 public:
     MainWindow(const std::string &title,
                const Model *model,
-               const int &launch_ray_type,
                const Camera &camera,
                const QuadLight &light,
                const float worldScale,

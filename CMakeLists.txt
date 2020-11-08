@@ -46,7 +46,8 @@ add_library(CudaPTX OBJECT
             ${CUDA_DIR}/rayLaunch.cu
             ${CUDA_DIR}/closestHit.cu
             ${CUDA_DIR}/anyHit.cu
-            ${CUDA_DIR}/missHit.cu)
+            ${CUDA_DIR}/missHit.cu
+            ${CUDA_DIR}/callableProgram.cu)
 target_include_directories(CudaPTX PRIVATE ${INCLUDE_DIR}
                            PRIVATE ${CUDA_DIR})
 target_link_libraries(CudaPTX
@@ -62,7 +63,7 @@ target_link_libraries(CudaPTX
 target_compile_features(CudaPTX PRIVATE cxx_std_14)
 
 # Cuda compile options
-target_compile_options(CudaPTX PRIVATE --use_fast_math)
+target_compile_options(CudaPTX PRIVATE --use_fast_math --relocatable-device-code=true)
 
 # We need to explicitly state that we need all CUDA files to be compiled into 
 # PTX files, and built with -dc as the member functions could be called by

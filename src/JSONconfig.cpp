@@ -83,8 +83,12 @@ void JSONconfig::generateConfig(const Camera &camera)
 
     // Parameters which will be returned as an enum(int) type
     config["parameters"]["LAUNCH_RAY_TYPE"] = _params->parameters.LAUNCH_RAY_TYPE;
+    config["parameters"]["RENDERER_TYPE"] = _params->parameters.RENDERER_TYPE;
 
     // Parameters which are directly updated into memory
+    config["parameters"]["RAY_STENCIL_RADIUS"] = _params->parameters.RAY_STENCIL_RADIUS;
+    config["parameters"]["RAY_STENCIL_QUALITY"]["Number of circles"] = _params->parameters.RAY_STENCIL_QUALITY.x;
+    config["parameters"]["RAY_STENCIL_QUALITY"]["Number of rays"] = _params->parameters.RAY_STENCIL_QUALITY.y;
     config["parameters"]["NUM_LIGHT_SAMPLES"] = _params->parameters.NUM_LIGHT_SAMPLES;
     config["parameters"]["NUM_PIXEL_SAMPLES"] = _params->parameters.NUM_PIXEL_SAMPLES;
     config["parameters"]["WAVE_LENGTH"] = _params->parameters.WAVE_LENGTH;
@@ -99,6 +103,9 @@ void JSONconfig::applyConfig() const
     try
     {
         // Parameters which are directly updated into memory
+        _params->parameters.RAY_STENCIL_RADIUS = config["parameters"]["RAY_STENCIL_RADIUS"].get<float>();
+        _params->parameters.RAY_STENCIL_QUALITY.x = config["parameters"]["RAY_STENCIL_QUALITY"]["Number of circles"].get<int>();
+        _params->parameters.RAY_STENCIL_QUALITY.y = config["parameters"]["RAY_STENCIL_QUALITY"]["Number of rays"].get<int>();
         _params->parameters.NUM_LIGHT_SAMPLES = config["parameters"]["NUM_LIGHT_SAMPLES"].get<int>();
         _params->parameters.NUM_PIXEL_SAMPLES = config["parameters"]["NUM_PIXEL_SAMPLES"].get<int>();
         _params->parameters.WAVE_LENGTH = config["parameters"]["WAVE_LENGTH"].get<float>();
@@ -107,7 +114,7 @@ void JSONconfig::applyConfig() const
         _params->parameters.MIN_EDGE_ANGLE = config["parameters"]["MIN_EDGE_ANGLE"].get<float>();
         _params->parameters.MAX_EDGE_ANGLE = config["parameters"]["MAX_EDGE_ANGLE"].get<float>();
     }
-    catch (std::exception e)
+    catch (std::exception &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
         std::cerr << "Configure file " << path << " is broken" << e.what() << std::endl;
@@ -135,4 +142,9 @@ Camera JSONconfig::returnCamera() const
 int JSONconfig::returnRayType() const
 {
     return config["parameters"]["LAUNCH_RAY_TYPE"].get<int>();
+}
+
+int JSONconfig::returnRendererType() const
+{
+    return config["parameters"]["RENDERER_TYPE"].get<int>();
 }

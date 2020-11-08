@@ -23,6 +23,7 @@ extern "C" const unsigned char rayLaunch[];
 extern "C" const unsigned char closestHit[];
 extern "C" const unsigned char anyHit[];
 extern "C" const unsigned char missHit[];
+extern "C" const unsigned char callableProgram[];
 
 /*! SBT record for a raygen program */
 struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecord
@@ -49,6 +50,15 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
   TriangleMeshSBTData data;
 };
 
+/*! SBT record for a callable program */
+struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) CallableRecord
+{
+  __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
+  // just a dummy value - later examples will use more interesting
+  // data here
+  void *data;
+};
+
 /*! constructor - performs all setup, including initializing
     optix, creates module, pipeline, programs, SBT, etc. */
 Renderer::Renderer(const Model *model, const QuadLight &light)
@@ -73,6 +83,8 @@ Renderer::Renderer(const Model *model, const QuadLight &light)
   createMissPrograms();
   std::cout << "#osc: creating hitgroup programs ..." << std::endl;
   createHitgroupPrograms();
+  std::cout << "#osc: creating callable programs ..." << std::endl;
+  createCallablePrograms();
   std::cout << "#osc: building accel structure ..." << std::endl;
   launchParams.traversable = buildAccel();
 
@@ -89,7 +101,7 @@ Renderer::Renderer(const Model *model, const QuadLight &light)
   std::cout << "#osc: context, module, pipeline, etc, all set up ..." << std::endl;
 
   std::cout << GDT_TERMINAL_GREEN;
-  std::cout << "#osc: Optix 7 Sample fully set up" << std::endl;
+  std::cout << "#osc: Optix 7 fully set up" << std::endl;
   std::cout << GDT_TERMINAL_DEFAULT;
 }
 
@@ -362,6 +374,7 @@ void Renderer::createModule()
   ptxCode["closestHit"] = closestHit;
   ptxCode["anyHit"] = anyHit;
   ptxCode["missHit"] = missHit;
+  ptxCode["callableProgram"] = callableProgram;
 
   for (auto [name, code] : ptxCode)
   {
@@ -496,7 +509,6 @@ void Renderer::createMissPrograms()
 /*! does all setup for the hitgroup program(s) we are going to use */
 void Renderer::createHitgroupPrograms()
 {
-  // for this simple example, we set up a single hit group
   hitgroupPGs.resize(RAY_TYPE_COUNT);
 
   char log[2048];
@@ -588,6 +600,51 @@ void Renderer::createHitgroupPrograms()
     PRINT(log);
 }
 
+/*! does all setup for the callable program(s) we are going to use */
+void Renderer::createCallablePrograms()
+{
+  callablePGs.resize(RENDERER_TYPE_COUNT);
+
+  char log[2048];
+  size_t sizeof_log = sizeof(log);
+
+  OptixProgramGroupOptions pgOptions = {};
+  OptixProgramGroupDesc pgDesc = {};
+  pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_CALLABLES;
+
+  // -------------------------------------------------------
+  // fast launch: fast edge renderer
+  // -------------------------------------------------------
+  pgDesc.callables.moduleCC = module["callableProgram"];
+  pgDesc.callables.entryFunctionNameCC = "__continuation_callable__fast_launch";
+
+  // OptixProgramGroup raypg;
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &callablePGs[FAST]));
+  if (sizeof_log > 1)
+    PRINT(log);
+
+  // -------------------------------------------------------
+  // classic launch: classic edge renderer
+  // -------------------------------------------------------
+  pgDesc.callables.moduleCC = module["callableProgram"];
+  pgDesc.callables.entryFunctionNameCC = "__continuation_callable__classic_launch";
+
+  // OptixProgramGroup raypg;
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &callablePGs[CLASSIC]));
+  if (sizeof_log > 1)
+    PRINT(log);
+}
+
 /*! assembles the full pipeline of all programs */
 void Renderer::createPipeline()
 {
@@ -597,6 +654,8 @@ void Renderer::createPipeline()
   for (auto pg : missPGs)
     programGroups.push_back(pg);
   for (auto pg : hitgroupPGs)
+    programGroups.push_back(pg);
+  for (auto pg : callablePGs)
     programGroups.push_back(pg);
 
   char log[2048];
@@ -698,6 +757,22 @@ void Renderer::buildSBT()
   sbt.hitgroupRecordBase = hitgroupRecordsBuffer.d_pointer();
   sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecord);
   sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
+
+  // ------------------------------------------------------------------
+  // build callable records
+  // ------------------------------------------------------------------
+  std::vector<CallableRecord> callableRecords;
+  for (int i = 0; i < callablePGs.size(); i++)
+  {
+    CallableRecord rec;
+    OPTIX_CHECK(optixSbtRecordPackHeader(callablePGs[i], &rec));
+    rec.data = nullptr; /* for now ... */
+    callableRecords.push_back(rec);
+  }
+  callableRecordsBuffer.alloc_and_upload(callableRecords);
+  sbt.callablesRecordBase = callableRecordsBuffer.d_pointer();
+  sbt.callablesRecordStrideInBytes = sizeof(CallableRecord);
+  sbt.callablesRecordCount = (int)callableRecords.size();
 }
 
 /*! render one frame */
@@ -763,6 +838,12 @@ void Renderer::setEnvCamera(const Camera &camera)
 void Renderer::setLaunchRayType(const int &launch_ray_type)
 {
   launchParams.parameters.LAUNCH_RAY_TYPE = launch_ray_type;
+}
+
+/*! set renderer type used in __raygen__ */
+void Renderer::setRendererType(const int &renderer_type)
+{
+  launchParams.parameters.RENDERER_TYPE = renderer_type;
 }
 
 /*! return the pointer of launch parameters */

@@ -24,9 +24,9 @@ extern "C" int main(int ac, char **av)
 {
     try
     {
+        // load geometry
         Model *model = loadOBJ(_OBJ_FILE);
-        // set launch ray type: RADIANCE_RAY_TYPE or PHASE_RAY_TYPE
-        int launch_ray_type = RADIANCE_RAY_TYPE;
+
         // set launch camera position
         Camera camera = {/*from*/ vec3f(-1293.07f, 154.681f, -0.7304f),
                          /* at */ model->bounds.center() - vec3f(0, 400, 0),
@@ -47,7 +47,7 @@ extern "C" int main(int ac, char **av)
         const std::string config_path = "config.json";
 
         MainWindow *window = new MainWindow("RT Edge",
-                                            model, launch_ray_type, camera, light, worldScale, config_path);
+                                            model, camera, light, worldScale, config_path);
         window->run();
     }
     catch (std::runtime_error &e)

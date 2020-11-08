@@ -49,3 +49,11 @@ static __forceinline__ __device__ T *getPRD()
     const uint32_t u1 = optixGetPayload_1();
     return reinterpret_cast<T *>(unpackPointer(u0, u1));
 }
+
+__forceinline__ __host__ __device__ vec3f screen_to_direction(const vec2f &screen,
+                                                              const vec3f &direction,
+                                                              const vec3f &horizontal,
+                                                              const vec3f &vertical)
+{
+    return normalize(direction + (screen.x - 0.5f) * horizontal + (screen.y - 0.5f) * vertical);
+}

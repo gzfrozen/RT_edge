@@ -63,7 +63,11 @@ struct LaunchParams
     // parameters
     struct
     {
+        int RENDERER_TYPE{FAST};
         int LAUNCH_RAY_TYPE{0};
+
+        float RAY_STENCIL_RADIUS{1e-2f};
+        vec2i RAY_STENCIL_QUALITY{2, 8};
 
         int NUM_LIGHT_SAMPLES{16};
         int NUM_PIXEL_SAMPLES{1};

@@ -63,8 +63,11 @@ public:
   /*! set sphere camera to render with */
   void setEnvCamera(const Camera &camera);
 
-  /*! set sphere camera to render with */
+  /*! set ray type used in __raygen__ */
   void setLaunchRayType(const int &launch_ray_type);
+
+  /*! set ray type used in __raygen__ */
+  void setRendererType(const int &renderer_type);
 
   /*! return the pointer of launch parameters */
   LaunchParams *getLaunchParams();
@@ -94,6 +97,9 @@ protected:
 
   /*! does all setup for the hitgroup program(s) we are going to use */
   void createHitgroupPrograms();
+
+  /*! does all setup for the hitgroup program(s) we are going to use */
+  void createCallablePrograms();
 
   /*! assembles the full pipeline of all programs */
   void createPipeline();
@@ -137,6 +143,8 @@ protected:
   CUDABuffer missRecordsBuffer;
   std::vector<OptixProgramGroup> hitgroupPGs;
   CUDABuffer hitgroupRecordsBuffer;
+  std::vector<OptixProgramGroup> callablePGs;
+  CUDABuffer callableRecordsBuffer;
   OptixShaderBindingTable sbt = {};
 
   /*! @{ our launch parameters, on the host, and the buffer to store

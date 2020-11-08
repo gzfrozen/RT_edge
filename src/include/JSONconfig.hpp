@@ -22,6 +22,7 @@ public:
     void applyConfig() const;                  //Set parameters which are directly updated into memory
     Camera returnCamera() const;               //Return a Camera type to used in undirectly camera update
     int returnRayType() const;                 //Return the ray type to used in undirectly camera update
+    int returnRendererType() const;            //Return the renderer type to used in undirectly camera update
 
 private:
     std::string path{"config.json"}; //JSON config file path

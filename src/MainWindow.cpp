@@ -14,12 +14,11 @@
 
 MainWindow::MainWindow(const std::string &title,
                        const Model *model,
-                       const int &launch_ray_type,
                        const Camera &camera,
                        const QuadLight &light,
                        const float worldScale,
                        const std::string &config_path)
-    : GLFCameraWindow(title, launch_ray_type, camera.from, camera.at, camera.up, worldScale),
+    : GLFCameraWindow(title, camera.from, camera.at, camera.up, worldScale),
       renderer(model, light)
 {
     // Setup Dear ImGui context
@@ -59,6 +58,7 @@ void MainWindow::render()
 {
     if (cameraFrame.modified)
     {
+        renderer.setRendererType(renderer_type);
         renderer.setLaunchRayType(ray_type);
         int cameraType = cameraFrame.get_camera_type();
         if (cameraType == PINHOLE)
@@ -143,22 +143,29 @@ void MainWindow::draw_gui()
             ImGui::Begin("Settings", &ui_on); // Create a window called "Hello, world!" and append into it.
             ImGui::SetWindowFontScale(xscale);
 
+            ImGui::PushItemWidth(100.f * xscale);
+            ImGui::SliderFloat("Ray stencil radius", &_params->parameters.RAY_STENCIL_RADIUS, 0.0f, 0.2f, "%5.3e");
+            ImGui::SameLine(0.f, 20.f * xscale);
+            ImGui::PushItemWidth(50.f * xscale);
+            ImGui::InputInt2("Ray stencil quality", reinterpret_cast<int *>(&_params->parameters.RAY_STENCIL_QUALITY));
+
             ImGui::InputInt("Number of light samples", &_params->parameters.NUM_LIGHT_SAMPLES, 1, 5);
+            ImGui::SameLine(0.f, 20.f * xscale);
             ImGui::InputInt("Number of pixel samples", &_params->parameters.NUM_PIXEL_SAMPLES, 1, 5);
 
+            ImGui::PushItemWidth(100.f * xscale);
             ImGui::SliderFloat("Wave Length", &_params->parameters.WAVE_LENGTH, 0.0f, 1000.0f); // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::SliderFloat("Edge detection depth", &_params->parameters.EDGE_DETECTION_DEPTH, 1e-3f, 5.f, "%e");
-            ImGui::SliderFloat("Max edge distance", &_params->parameters.MAX_EDGE_DISTANCE, 0.0f, 1.0f);
-            ImGui::SliderFloat("Min edge angle", &_params->parameters.MIN_EDGE_ANGLE, 0.0f, _params->parameters.MAX_EDGE_ANGLE);
-            ImGui::SliderFloat("Max edge angle", &_params->parameters.MAX_EDGE_ANGLE, 0.0f, M_PI);
+            ImGui::SliderFloat("Edge detection depth", &_params->parameters.EDGE_DETECTION_DEPTH, 1e-3f, 5.f, "%5.3e");
+            ImGui::SliderFloat("Max edge distance", &_params->parameters.MAX_EDGE_DISTANCE, 0.0f, 1.0f, "%5.3e");
+            ImGui::SliderFloat("Min edge angle", &_params->parameters.MIN_EDGE_ANGLE, 0.0f, _params->parameters.MAX_EDGE_ANGLE, "%.3f");
+            ImGui::SliderFloat("Max edge angle", &_params->parameters.MAX_EDGE_ANGLE, 0.0f, M_PI, "%.3f");
 
             ImGui::NewLine();
             if (ImGui::Button("Load")) // Buttons return true when clicked (most widgets return true when edited/activated)
             {
                 applyConfig();
             }
-            ImGui::SameLine();
-            // ImGui::SameLine();
+            ImGui::SameLine(0.f, 10.f * xscale);
             if (ImGui::Button("Save"))
             {
                 json_config.generateConfig(get_camera());
@@ -181,5 +188,6 @@ void MainWindow::applyConfig()
     json_config.applyConfig();
     Camera configCamera = json_config.returnCamera();
     cameraFrame.setOrientation(configCamera.from, configCamera.at, configCamera.up);
+    renderer_type = json_config.returnRendererType();
     ray_type = json_config.returnRayType();
 }
