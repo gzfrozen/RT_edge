@@ -2,14 +2,14 @@
 
 enum renderer_type
 {
-    FAST,
+    FAST = 0,
     CLASSIC,
     RENDERER_TYPE_COUNT
 };
 
 enum camera_type
 {
-    PINHOLE,
+    PINHOLE = 0,
     ENV
 };
 

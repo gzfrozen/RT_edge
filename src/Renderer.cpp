@@ -366,7 +366,7 @@ void Renderer::createModule()
   pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";
   pipelineCompileOptions.usesPrimitiveTypeFlags = OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE;
 
-  pipelineLinkOptions.maxTraceDepth = 2;
+  pipelineLinkOptions.maxTraceDepth = 1;
 
   // load each ptx code manually
   static std::unordered_map<std::string, const unsigned char *> ptxCode;
@@ -398,24 +398,35 @@ void Renderer::createModule()
 /*! does all setup for the raygen program(s) we are going to use */
 void Renderer::createRaygenPrograms()
 {
-  // we do a single ray gen program in this example:
-  raygenPGs.resize(1);
+  raygenPGs.resize(RENDERER_TYPE_COUNT);
+
+  char log[2048];
+  size_t sizeof_log = sizeof(log);
 
   OptixProgramGroupOptions pgOptions = {};
   OptixProgramGroupDesc pgDesc = {};
   pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
   pgDesc.raygen.module = module["rayLaunch"];
-  pgDesc.raygen.entryFunctionName = "__raygen__renderFrame";
 
-  // OptixProgramGroup raypg;
-  char log[2048];
-  size_t sizeof_log = sizeof(log);
+  // Fast renderer;
+  pgDesc.raygen.entryFunctionName = "__raygen__fastRenderer";
   OPTIX_CHECK(optixProgramGroupCreate(optixContext,
                                       &pgDesc,
                                       1,
                                       &pgOptions,
                                       log, &sizeof_log,
-                                      &raygenPGs[0]));
+                                      &raygenPGs[FAST]));
+  if (sizeof_log > 1)
+    PRINT(log);
+
+  // Classic renderer;
+  pgDesc.raygen.entryFunctionName = "__raygen__classicRenderer";
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &raygenPGs[CLASSIC]));
   if (sizeof_log > 1)
     PRINT(log);
 }
@@ -672,21 +683,21 @@ void Renderer::createPipeline()
   if (sizeof_log > 1)
     PRINT(log);
 
-  OPTIX_CHECK(optixPipelineSetStackSize(/* [in] The pipeline to configure the stack size for */
-                                        pipeline,
-                                        /* [in] The direct stack size requirement for direct
-                    callables invoked from IS or AH. */
-                                        2 * 1024,
-                                        /* [in] The direct stack size requirement for direct
-                    callables invoked from RG, MS, or CH.  */
-                                        2 * 1024,
-                                        /* [in] The continuation stack requirement. */
-                                        2 * 1024,
-                                        /* [in] The maximum depth of a traversable graph
-                    passed to trace. */
-                                        1));
-  if (sizeof_log > 1)
-    PRINT(log);
+  // OPTIX_CHECK(optixPipelineSetStackSize(/* [in] The pipeline to configure the stack size for */
+  //                                       pipeline,
+  //                                       /* [in] The direct stack size requirement for direct
+  //                   callables invoked from IS or AH. */
+  //                                       2 * 1024,
+  //                                       /* [in] The direct stack size requirement for direct
+  //                   callables invoked from RG, MS, or CH.  */
+  //                                       2 * 1024,
+  //                                       /* [in] The continuation stack requirement. */
+  //                                       2 * 1024,
+  //                                       /* [in] The maximum depth of a traversable graph
+  //                   passed to trace. */
+  //                                       1));
+  // if (sizeof_log > 1)
+  //   PRINT(log);
 }
 
 /*! constructs the shader binding table */
@@ -786,7 +797,7 @@ void Renderer::render()
   launchParamsBuffer.upload(&launchParams, 1);
   launchParams.frame.accumID++;
 
-  OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
+  OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: multiple pipelines not working*/
                           pipeline, stream,
                           /*! parameters and SBT */
                           launchParamsBuffer.d_pointer(),
@@ -844,6 +855,7 @@ void Renderer::setLaunchRayType(const int &launch_ray_type)
 void Renderer::setRendererType(const int &renderer_type)
 {
   launchParams.parameters.RENDERER_TYPE = renderer_type;
+  sbt.raygenRecord = raygenRecordsBuffer.d_pointer() + sizeof(MissRecord) * renderer_type;
 }
 
 /*! return the pointer of launch parameters */
