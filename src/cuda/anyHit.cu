@@ -31,3 +31,9 @@ extern "C" __global__ void __anyhit__edge()
 {
     /* not going to be used ... */
 }
+
+extern "C" __global__ void __anyhit__classic()
+{
+    /* not going to be used ... */
+    printf("");
+}

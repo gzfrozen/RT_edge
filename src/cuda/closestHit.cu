@@ -358,3 +358,35 @@ extern "C" __global__ void __closesthit__edge()
 {
     /* not going to be used ... */
 }
+
+extern "C" __global__ void __closesthit__classic()
+{
+    const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *)optixGetSbtDataPointer();
+    PRD_Classic &prd_classic = *getPRD<PRD_Classic>();
+
+    // ------------------------------------------------------------------
+    // gather some basic hit information
+    // ------------------------------------------------------------------
+    const int primID = optixGetPrimitiveIndex();
+    prd_classic.primID = primID;
+    prd_classic.geometryID = sbtData.geometryID;
+    prd_classic.hitT = optixGetRayTmax();
+
+    // ------------------------------------------------------------------
+    // compute normal, using either shading normal (if avail), or
+    // geometry normal (fallback)
+    // ------------------------------------------------------------------
+    const vec3i index = sbtData.index[primID];
+    const float u = optixGetTriangleBarycentrics().x;
+    const float v = optixGetTriangleBarycentrics().y;
+
+    const vec3f &A = sbtData.vertex[index.x];
+    const vec3f &B = sbtData.vertex[index.y];
+    const vec3f &C = sbtData.vertex[index.z];
+    vec3f Ng = cross(B - A, C - A);
+    vec3f Ns = (sbtData.normal)
+                   ? ((1.f - u - v) * sbtData.normal[index.x] + u * sbtData.normal[index.y] + v * sbtData.normal[index.z])
+                   : Ng;
+
+    prd_classic.normal = Ns;
+}

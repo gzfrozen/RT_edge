@@ -515,6 +515,20 @@ void Renderer::createMissPrograms()
                                       &missPGs[EDGE_RAY_TYPE]));
   if (sizeof_log > 1)
     PRINT(log);
+
+  // ------------------------------------------------------------------
+  // edge detection rays
+  // ------------------------------------------------------------------
+  pgDesc.miss.entryFunctionName = "__miss__classic";
+
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &missPGs[CLASSIC_RAY_TYPE]));
+  if (sizeof_log > 1)
+    PRINT(log);
 }
 
 /*! does all setup for the hitgroup program(s) we are going to use */
@@ -607,6 +621,21 @@ void Renderer::createHitgroupPrograms()
                                       &pgOptions,
                                       log, &sizeof_log,
                                       &hitgroupPGs[EDGE_RAY_TYPE]));
+  if (sizeof_log > 1)
+    PRINT(log);
+
+  // -------------------------------------------------------
+  // Classic renderer rays: rays used in classic renderers
+  // -------------------------------------------------------
+  pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__classic";
+  pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__classic";
+
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &hitgroupPGs[CLASSIC_RAY_TYPE]));
   if (sizeof_log > 1)
     PRINT(log);
 }
@@ -740,10 +769,9 @@ void Renderer::buildSBT()
   std::vector<HitgroupRecord> hitgroupRecords;
   for (int meshID = 0; meshID < numObjects; meshID++)
   {
+    auto mesh = model->meshes[meshID];
     for (int rayID = 0; rayID < RAY_TYPE_COUNT; rayID++)
     {
-      auto mesh = model->meshes[meshID];
-
       HitgroupRecord rec;
       // all meshes use the same code, so all same hit group
       OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[rayID], &rec));
@@ -757,6 +785,7 @@ void Renderer::buildSBT()
       {
         rec.data.hasTexture = false;
       }
+      rec.data.geometryID = mesh->geometryID;
       rec.data.index = (vec3i *)indexBuffer[meshID].d_pointer();
       rec.data.vertex = (vec3f *)vertexBuffer[meshID].d_pointer();
       rec.data.normal = (vec3f *)normalBuffer[meshID].d_pointer();

@@ -39,3 +39,10 @@ extern "C" __global__ void __miss__edge()
     PRD_Edge &prd_edge = *getPRD<PRD_Edge>();
     prd_edge.is_edge = false;
 }
+
+extern "C" __global__ void __miss__classic()
+{
+    // we didn't hit anything
+    PRD_Classic &prd_classic = *getPRD<PRD_Classic>();
+    prd_classic.is_miss = true;
+}

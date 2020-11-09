@@ -25,6 +25,7 @@ using namespace gdt;
 
 struct TriangleMeshSBTData
 {
+    uint32_t geometryID;
     vec3f color;
     vec3f *vertex;
     vec3f *normal;

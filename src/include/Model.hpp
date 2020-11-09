@@ -25,6 +25,7 @@ using namespace gdt;
       render */
 struct TriangleMesh
 {
+  uint32_t geometryID;
   std::vector<vec3f> vertex;
   std::vector<vec3f> normal;
   std::vector<vec2f> texcoord;

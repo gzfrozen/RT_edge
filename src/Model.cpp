@@ -192,6 +192,7 @@ Model *loadOBJ(const std::string &objFile)
     for (int materialID : materialIDs)
     {
       TriangleMesh *mesh = new TriangleMesh;
+      mesh->geometryID = shapeID;
 
       for (int faceID = 0; faceID < shape.mesh.material_ids.size(); faceID++)
       {
@@ -230,6 +231,6 @@ Model *loadOBJ(const std::string &objFile)
     for (auto vtx : mesh->vertex)
       model->bounds.extend(vtx);
 
-  std::cout << GDT_TERMINAL_YELLOW << "created a total of " << model->meshes.size() << " meshes" << GDT_TERMINAL_DEFAULT << std::endl;
+  std::cout << GDT_TERMINAL_YELLOW << "created a total of " << model->meshes.size() << " geometries" << GDT_TERMINAL_DEFAULT << std::endl;
   return model;
 }
