@@ -30,7 +30,7 @@ struct PRD_Edge
 
 struct PRD_Classic
 {
-    bool is_miss{false};
+    bool is_hit{false};
     uint32_t geometryID;
     uint32_t primID;
     float hitT;

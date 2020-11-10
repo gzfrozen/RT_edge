@@ -112,7 +112,7 @@ GLFWindow::GLFWindow(const std::string &title)
 
   glfwSetWindowUserPointer(handle, this);
   glfwMakeContextCurrent(handle);
-  glfwSwapInterval(1);
+  glfwSwapInterval(0);
 
   // glfwSetWindowUserPointer(window, GLFWindow::current);
   glfwSetFramebufferSizeCallback(handle, glfwindow_reshape_cb);

@@ -363,6 +363,7 @@ extern "C" __global__ void __closesthit__classic()
 {
     const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *)optixGetSbtDataPointer();
     PRD_Classic &prd_classic = *getPRD<PRD_Classic>();
+    prd_classic.is_hit = true;
 
     // ------------------------------------------------------------------
     // gather some basic hit information

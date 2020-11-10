@@ -63,10 +63,13 @@ public:
   /*! set sphere camera to render with */
   void setEnvCamera(const Camera &camera);
 
+  /*! set ray stencil used in classic renderer */
+  void setRayStencil();
+
   /*! set ray type used in __raygen__ */
   void setLaunchRayType(const int &launch_ray_type);
 
-  /*! set ray type used in __raygen__ */
+  /*! set renderer type used in __raygen__ */
   void setRendererType(const int &renderer_type);
 
   /*! return the pointer of launch parameters */

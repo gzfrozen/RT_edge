@@ -59,16 +59,27 @@ struct LaunchParams
         vec3f origin, du, dv, power;
     } light;
 
+    struct
+    {
+        float RAY_STENCIL_RADIUS{1e-2f};
+
+        /* number of circles, number of rays in first circle */
+        /* number of rays must be multiple of 4. */
+        /* number doubles each time on next circle */
+        vec2i RAY_STENCIL_QUALITY{2, 8};
+
+        /* radius (screen space) */
+        vec2f ray_stencil[256];
+        int stencil_length{0};
+    } classic;
+
     OptixTraversableHandle traversable;
 
     // parameters
     struct
     {
         int RENDERER_TYPE{FAST};
-        int LAUNCH_RAY_TYPE{0};
-
-        float RAY_STENCIL_RADIUS{1e-2f};
-        vec2i RAY_STENCIL_QUALITY{2, 8};
+        int LAUNCH_RAY_TYPE{RADIANCE_RAY_TYPE};
 
         int NUM_LIGHT_SAMPLES{16};
         int NUM_PIXEL_SAMPLES{1};

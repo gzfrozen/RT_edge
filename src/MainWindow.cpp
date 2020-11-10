@@ -60,6 +60,10 @@ void MainWindow::render()
     {
         renderer.setRendererType(renderer_type);
         renderer.setLaunchRayType(ray_type);
+        if (_params->parameters.RENDERER_TYPE == CLASSIC)
+        {
+            renderer.setRayStencil();
+        }
         int cameraType = cameraFrame.get_camera_type();
         if (cameraType == PINHOLE)
         {
@@ -144,10 +148,10 @@ void MainWindow::draw_gui()
             ImGui::SetWindowFontScale(xscale);
 
             ImGui::PushItemWidth(100.f * xscale);
-            ImGui::SliderFloat("Ray stencil radius", &_params->parameters.RAY_STENCIL_RADIUS, 0.0f, 0.2f, "%5.3e");
+            ImGui::SliderFloat("Ray stencil radius", &_params->classic.RAY_STENCIL_RADIUS, 0.0f, 0.2f, "%5.3e");
             ImGui::SameLine(0.f, 20.f * xscale);
             ImGui::PushItemWidth(50.f * xscale);
-            ImGui::InputInt2("Ray stencil quality", reinterpret_cast<int *>(&_params->parameters.RAY_STENCIL_QUALITY));
+            ImGui::InputInt2("Ray stencil quality", reinterpret_cast<int *>(&_params->classic.RAY_STENCIL_QUALITY));
 
             ImGui::InputInt("Number of light samples", &_params->parameters.NUM_LIGHT_SAMPLES, 1, 5);
             ImGui::SameLine(0.f, 20.f * xscale);

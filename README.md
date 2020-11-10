@@ -16,37 +16,41 @@ This code requires [CMake](https://cmake.org/download/) (version 3.18 or higher)
 
 ## Dependencies
 
- - A Nvidia GPU
- - a compiler
-	 - on Windows 10, tested with MSVC 2019 and Clang 10.0.0 C++ compiler
-	 - other common compilers (not tested)
- - [CMake](https://cmake.org/download/) (version 3.18 or higher)
- - [CUDA 10.x or CUDA 11](https://developer.nvidia.com/cuda-downloads)
- - Latest Nvidia GPU Driver
+- A Nvidia GPU
+- a compiler
+  - on Windows 10, tested with MSVC 2019 and Clang 10.0.0 C++ compiler
+  - other common compilers (not tested)
+- [CMake](https://cmake.org/download/) (version 3.18 or higher)
+- [CUDA 10.x or CUDA 11.x](https://developer.nvidia.com/cuda-downloads)
+- Latest Nvidia GPU Driver
 - [OptiX 7.2 SDK](https://developer.nvidia.com/designworks/optix/download)
- - a 3D geometry object file
-	 - recommend Crytek Sponza, BMW on [https://casual-effects.com/data/](https://casual-effects.com/data/)
+- a 3D geometry object file
+  - recommend Crytek Sponza, BMW on [https://casual-effects.com/data/](https://casual-effects.com/data/)
 
-## Important settings and parameters 
+## Important settings and parameters
 
 - In /CMakeLists.txt, CUDA_ARCHITECTURES. Change it to match your GPU.
-	- see details in [CMake Document](https://cmake.org/cmake/help/v3.18/prop_tgt/CUDA_ARCHITECTURES.html#prop_tgt:CUDA_ARCHITECTURES), [CUDA Document](https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#virtual-architecture-feature-list)
+  - see details in [CMake Document](https://cmake.org/cmake/help/v3.18/prop_tgt/CUDA_ARCHITECTURES.html#prop_tgt:CUDA_ARCHITECTURES), [CUDA Document](https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#virtual-architecture-feature-list)
 
 >     set_target_properties(CudaPTX PROPERTIES
 >     ...
 >     CUDA_ARCHITECTURES 75-real # Set your GPU architecture (important)
 >     ...
 >     )
-- Also in /CMakeLists.txt, _OBJ_FILE. Change it to match your .obj file path
->     #Set your OBJ file path
->     target_compile_definitions(RT_edge PUBLIC _OBJ_FILE="${PROJECT_SOURCE_DIR}/models/sponza.obj")
 
-## Controlling 
+- Also in /CMakeLists.txt, \_OBJ_FILE. Change it to match your .obj file path
+  >     #Set your OBJ file path
+  >     target_compile_definitions(RT_edge PUBLIC _OBJ_FILE="${PROJECT_SOURCE_DIR}/models/sponza.obj")
+
+## Controlling
 
 - Use left, middle, right mouse button to drag and scroll
 - Press w, s, a, d to move
-- Press ESC to toggle GUI parameter control pannel
+- (New) Press ESC to toggle GUI parameter control pannel
 - Press =, - to control drag speed, alt + =, - to control move speed
 - Press p, l to switch between pin-hole camera and 360 degree camera (not working properly at the moment)
-- Press r, t to switch between normal rendering mode and phase detection mode
+- Press r, switch to normal rendering mode
+- Press t, switch to phase detection mode
+- <font color="Red">(New)</font> Press e, switch to fast feature line mode
+- <font color="Red">(New)</font> Press q, switch to classic feature line mode
 - Press c to check current camera information

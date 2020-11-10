@@ -874,6 +874,39 @@ void Renderer::setEnvCamera(const Camera &camera)
                                         camera.matrix.vy};
 }
 
+/*! set ray stencil used in classic renderer */
+void Renderer::setRayStencil()
+{
+  float &h = launchParams.classic.RAY_STENCIL_RADIUS;
+  int &N = launchParams.classic.RAY_STENCIL_QUALITY.x;
+  int &n = launchParams.classic.RAY_STENCIL_QUALITY.y;
+
+  // parameter check
+  assert(h > 0.f);
+  assert(N > 0 && N < 9);
+  assert(n > 0 && n % 4 == 0);
+
+  float temp_r;
+  int temp_n{n};
+  float theta;
+  int index{0};
+
+  for (int i = 0; i < N; i++)
+  {
+    temp_r = h / N * (i + 1);
+    for (int j = 0; j < temp_n; j++)
+    {
+      theta = 2 * M_PI * j / temp_n;
+      // calculate screen space offset position
+      launchParams.classic.ray_stencil[index + j] = vec2f(cosf(theta) * temp_r, sinf(theta) * temp_r);
+    }
+    index += temp_n;
+    temp_n *= 2;
+  }
+
+  launchParams.classic.stencil_length = index;
+}
+
 /*! set ray type used in __raygen__ */
 void Renderer::setLaunchRayType(const int &launch_ray_type)
 {

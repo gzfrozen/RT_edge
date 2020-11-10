@@ -42,7 +42,5 @@ extern "C" __global__ void __miss__edge()
 
 extern "C" __global__ void __miss__classic()
 {
-    // we didn't hit anything
-    PRD_Classic &prd_classic = *getPRD<PRD_Classic>();
-    prd_classic.is_miss = true;
+    // we didn't do anything
 }

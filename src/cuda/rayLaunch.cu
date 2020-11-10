@@ -31,43 +31,10 @@ __forceinline__ __host__ __device__ vec3f screen_to_direction(const vec2f &scree
     return normalize(direction + (screen.x - 0.5f) * horizontal + (screen.y - 0.5f) * vertical);
 }
 
-/* change polor into xy coordinate vector */
-__forceinline__ __host__ __device__ vec2f polor_to_normal(const float &theta, const float &r)
+// calculate edge strength, used in classic renderer
+__forceinline__ __host__ __device__ float get_edge_strength(const int &M, const int &i)
 {
-    return vec2f(cosf(theta) * r, sinf(theta) * r);
-}
-
-/* make ray_stencil[] into an array stored directions of a ray stencil.
-*ray_stencil: pointer of a vec2f ray directions array (screen space),
-center_pixel_location: location of center pixel (screen space),
-h: radius (screen space),
-N: number of circles,
-n: number of rays in first circle, must be multiple of 4. number doubles each time on next circle */
-__host__ __device__ void makeRayStencil1(vec2f *const ray_stencil,
-                                         const vec2f &center_pixel_location,
-                                         const float &h,
-                                         const int &N,
-                                         const int &n)
-{
-    assert(h > 0.f);
-    assert(N > 0);
-    assert(n > 0 && n % 4 == 0);
-
-    float temp_r;
-    int temp_n{n};
-    float theta;
-    int index{0};
-    for (int i = 0; i < N; i++)
-    {
-        temp_r = h / N * (i + 1);
-        for (int j = 0; j < temp_n; j++)
-        {
-            theta = 2 * M_PI * j / temp_n;
-            ray_stencil[index + j] = polor_to_normal(temp_r, theta) + center_pixel_location;
-        }
-        index += temp_n;
-        temp_n *= 2;
-    }
+    return 1.f - 2.f * fabsf((float)i - (float)M / 2.f) / (float)M;
 }
 
 //------------------------------------------------------------------------------
@@ -166,14 +133,11 @@ extern "C" __global__ void __raygen__classicRenderer()
 {
     const int &numPixelSamples = optixLaunchParams.parameters.NUM_PIXEL_SAMPLES;
     const auto &camera = optixLaunchParams.camera;
-    const int &N = optixLaunchParams.parameters.RAY_STENCIL_QUALITY.x;
-    const int &n = optixLaunchParams.parameters.RAY_STENCIL_QUALITY.y;
-    const float &radius = optixLaunchParams.parameters.RAY_STENCIL_RADIUS;
-
-    // parameter check
-    assert(radius > 0.f);
-    assert(N > 0);
-    assert(n > 0 && n % 4 == 0);
+    const int &N = optixLaunchParams.classic.RAY_STENCIL_QUALITY.x;
+    const int &n = optixLaunchParams.classic.RAY_STENCIL_QUALITY.y;
+    const float &radius = optixLaunchParams.classic.RAY_STENCIL_RADIUS;
+    const int &stencil_length = optixLaunchParams.classic.stencil_length;
+    const vec2f *const ray_stencil = optixLaunchParams.classic.ray_stencil;
 
     // compute a test pattern based on pixel ID
     const int ix = optixGetLaunchIndex().x;
@@ -181,74 +145,80 @@ extern "C" __global__ void __raygen__classicRenderer()
 
     // normalized screen plane position, in [0,1]^2
     vec2f screen = (vec2f(ix + 0.5f, iy + 0.5f) / vec2f(optixLaunchParams.frame.size));
+    // main ray direction
+    vec3f main_rayDir = screen_to_direction(screen, camera.direction, camera.horizontal, camera.vertical);
 
-    float temp_r;
-    int temp_n{n};
-    float theta;
-    int index{0};
-    for (int i = 0; i < N; i++)
+    // values for caculating edge strength
+    bool main_is_hit{false};
+    uint32_t main_geometryID;
+    int num_missed;
+    int num_different;
+
+    // tracing center ray
     {
-        temp_r = radius / N * (i + 1);
-        for (int j = 0; j < temp_n; j++)
+        PRD_Classic prd_main;
+        // the values we store the PRD pointer in:
+        uint32_t u0, u1;
+        packPointer(&prd_main, u0, u1);
+        optixTrace(optixLaunchParams.traversable,
+                   camera.position,
+                   main_rayDir,
+                   0.f,   // tmin
+                   1e20f, // tmax
+                   0.0f,  // rayTime
+                   OptixVisibilityMask(255),
+                   OPTIX_RAY_FLAG_DISABLE_ANYHIT, //OPTIX_RAY_FLAG_NONE,
+                   CLASSIC_RAY_TYPE,              // SBT offset
+                   RAY_TYPE_COUNT,                // SBT stride
+                   CLASSIC_RAY_TYPE,              // missSBTIndex
+                   u0, u1);
+        if (prd_main.is_hit)
         {
-            theta = 2 * M_PI * j / temp_n;
-            vec3f rayDir = screen_to_direction(polor_to_normal(temp_r, theta) + screen, camera.direction, camera.horizontal, camera.vertical);
-
-            PRD_Classic prd_classic;
-            // the values we store the PRD pointer in:
-            uint32_t u0, u1;
-            packPointer(&prd_classic, u0, u1);
-            optixTrace(optixLaunchParams.traversable,
-                       camera.position,
-                       rayDir,
-                       0.f,   // tmin
-                       1e20f, // tmax
-                       0.0f,  // rayTime
-                       OptixVisibilityMask(255),
-                       OPTIX_RAY_FLAG_DISABLE_ANYHIT, //OPTIX_RAY_FLAG_NONE,
-                       CLASSIC_RAY_TYPE,              // SBT offset
-                       RAY_TYPE_COUNT,                // SBT stride
-                       CLASSIC_RAY_TYPE,              // missSBTIndex
-                       u0, u1);
-            // if (ix == 500 & iy == 500)
-            // {
-            //     printf("%d\n", prd_classic.primID);
-            // }
+            main_is_hit = true;
+            main_geometryID = prd_main.geometryID;
         }
-        index += temp_n;
-        temp_n *= 2;
     }
 
-    // vec3f rayDir = screen_to_direction(screen, camera.direction, camera.horizontal, camera.vertical);
+    // tracing ray_stencil
+    for (int i = 0; i < stencil_length; i++)
+    {
+        vec3f sub_rayDir = screen_to_direction(screen + ray_stencil[i], camera.direction, camera.horizontal, camera.vertical);
+        PRD_Classic prd_sub;
+        // the values we store the PRD pointer in:
+        uint32_t u0, u1;
+        packPointer(&prd_sub, u0, u1);
+        optixTrace(optixLaunchParams.traversable,
+                   camera.position,
+                   sub_rayDir,
+                   0.f,   // tmin
+                   1e20f, // tmax
+                   0.0f,  // rayTime
+                   OptixVisibilityMask(255),
+                   OPTIX_RAY_FLAG_DISABLE_ANYHIT, //OPTIX_RAY_FLAG_NONE,
+                   CLASSIC_RAY_TYPE,              // SBT offset
+                   RAY_TYPE_COUNT,                // SBT stride
+                   CLASSIC_RAY_TYPE,              // missSBTIndex
+                   u0, u1);
+        if (prd_sub.is_hit)
+        {
+            if (prd_sub.geometryID != main_geometryID)
+            {
+                num_different++;
+            }
+        }
+        else
+        {
+            num_missed++;
+        }
+    }
 
-    // just try to calculate (2^N - 1) * n, cuda seems doesn't suppor pow(int, int)
-    // int array_size{1};
-    // for (int i = 0; i < quality.x; i++)
-    // {
-    //     array_size *= 2;
-    // }
-    // array_size -= 1;
-    // array_size *= quality.y;
+    // calculate edge
+    vec3f pixelColor = {255.f};
+    float edge_strength{0.f};
+    edge_strength = main_is_hit ? get_edge_strength(stencil_length, num_different + num_missed)
+                                : get_edge_strength(stencil_length, num_missed);
+    pixelColor *= 1 - edge_strength;
 
-    // vec2f *rayStencil;
-    // rayStencil = new vec2f[array_size];
-    // makeRayStencil1(rayStencil, screen, radius, quality.x, quality.y);
-
-    // // generate ray direction
-    // vec3f *rayDir;
-    // rayDir = new vec3f[array_size + 1];
-    // for (int i = 0; i < array_size; i++)
-    // {
-    //     rayDir[i] = screen_to_direction(rayStencil[i], camera.direction, camera.horizontal, camera.vertical);
-    // }
-    // rayDir[array_size] = screen_to_direction(screen, camera.direction, camera.horizontal, camera.vertical);
-
-    // // to do: ray tracing..
-
-    // delete[] rayStencil;
-    // delete[] rayDir;
-
-    vec3f pixelColor = {0.f, 255.f, 0.f};
     const int r = int(255.99f * min(pixelColor.x / numPixelSamples, 1.f));
     const int g = int(255.99f * min(pixelColor.y / numPixelSamples, 1.f));
     const int b = int(255.99f * min(pixelColor.z / numPixelSamples, 1.f));

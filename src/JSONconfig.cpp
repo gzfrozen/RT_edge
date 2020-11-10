@@ -86,9 +86,9 @@ void JSONconfig::generateConfig(const Camera &camera)
     config["parameters"]["RENDERER_TYPE"] = _params->parameters.RENDERER_TYPE;
 
     // Parameters which are directly updated into memory
-    config["parameters"]["RAY_STENCIL_RADIUS"] = _params->parameters.RAY_STENCIL_RADIUS;
-    config["parameters"]["RAY_STENCIL_QUALITY"]["Number of circles"] = _params->parameters.RAY_STENCIL_QUALITY.x;
-    config["parameters"]["RAY_STENCIL_QUALITY"]["Number of rays"] = _params->parameters.RAY_STENCIL_QUALITY.y;
+    config["classic"]["RAY_STENCIL_RADIUS"] = _params->classic.RAY_STENCIL_RADIUS;
+    config["classic"]["RAY_STENCIL_QUALITY"]["Number of circles"] = _params->classic.RAY_STENCIL_QUALITY.x;
+    config["classic"]["RAY_STENCIL_QUALITY"]["Number of rays"] = _params->classic.RAY_STENCIL_QUALITY.y;
     config["parameters"]["NUM_LIGHT_SAMPLES"] = _params->parameters.NUM_LIGHT_SAMPLES;
     config["parameters"]["NUM_PIXEL_SAMPLES"] = _params->parameters.NUM_PIXEL_SAMPLES;
     config["parameters"]["WAVE_LENGTH"] = _params->parameters.WAVE_LENGTH;
@@ -103,9 +103,9 @@ void JSONconfig::applyConfig() const
     try
     {
         // Parameters which are directly updated into memory
-        _params->parameters.RAY_STENCIL_RADIUS = config["parameters"]["RAY_STENCIL_RADIUS"].get<float>();
-        _params->parameters.RAY_STENCIL_QUALITY.x = config["parameters"]["RAY_STENCIL_QUALITY"]["Number of circles"].get<int>();
-        _params->parameters.RAY_STENCIL_QUALITY.y = config["parameters"]["RAY_STENCIL_QUALITY"]["Number of rays"].get<int>();
+        _params->classic.RAY_STENCIL_RADIUS = config["classic"]["RAY_STENCIL_RADIUS"].get<float>();
+        _params->classic.RAY_STENCIL_QUALITY.x = config["classic"]["RAY_STENCIL_QUALITY"]["Number of circles"].get<int>();
+        _params->classic.RAY_STENCIL_QUALITY.y = config["classic"]["RAY_STENCIL_QUALITY"]["Number of rays"].get<int>();
         _params->parameters.NUM_LIGHT_SAMPLES = config["parameters"]["NUM_LIGHT_SAMPLES"].get<int>();
         _params->parameters.NUM_PIXEL_SAMPLES = config["parameters"]["NUM_PIXEL_SAMPLES"].get<int>();
         _params->parameters.WAVE_LENGTH = config["parameters"]["WAVE_LENGTH"].get<float>();
