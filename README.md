@@ -30,13 +30,14 @@ This code requires [CMake](https://cmake.org/download/) (version 3.18 or higher)
 ## Important settings and parameters
 
 - In /CMakeLists.txt, CUDA_ARCHITECTURES. Change it to match your GPU.
+
   - see details in [CMake Document](https://cmake.org/cmake/help/v3.18/prop_tgt/CUDA_ARCHITECTURES.html#prop_tgt:CUDA_ARCHITECTURES), [CUDA Document](https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#virtual-architecture-feature-list)
 
->     set_target_properties(CudaPTX PROPERTIES
->     ...
->     CUDA_ARCHITECTURES 75-real # Set your GPU architecture (important)
->     ...
->     )
+  >     set_target_properties(CudaPTX PROPERTIES
+  >     ...
+  >     CUDA_ARCHITECTURES 75-real # Set your GPU architecture (important)
+  >     ...
+  >     )
 
 - Also in /CMakeLists.txt, \_OBJ_FILE. Change it to match your .obj file path
   >     #Set your OBJ file path
@@ -51,6 +52,6 @@ This code requires [CMake](https://cmake.org/download/) (version 3.18 or higher)
 - Press p, l to switch between pin-hole camera and 360 degree camera (not working properly at the moment)
 - Press r, switch to normal rendering mode
 - Press t, switch to phase detection mode
-- <font color="Red">(New)</font> Press e, switch to fast feature line mode
-- <font color="Red">(New)</font> Press q, switch to classic feature line mode
+- (New) Press e, switch to fast feature line mode
+- (New) Press q, switch to classic feature line mode
 - Press c to check current camera information

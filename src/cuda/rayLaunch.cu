@@ -133,10 +133,8 @@ extern "C" __global__ void __raygen__classicRenderer()
 {
     const int &numPixelSamples = optixLaunchParams.parameters.NUM_PIXEL_SAMPLES;
     const auto &camera = optixLaunchParams.camera;
-    const int &N = optixLaunchParams.classic.RAY_STENCIL_QUALITY.x;
-    const int &n = optixLaunchParams.classic.RAY_STENCIL_QUALITY.y;
-    const float &radius = optixLaunchParams.classic.RAY_STENCIL_RADIUS;
     const int &stencil_length = optixLaunchParams.classic.stencil_length;
+    const int *const normal_index = optixLaunchParams.classic.stencil_normal_index;
     const vec2f *const ray_stencil = optixLaunchParams.classic.ray_stencil;
 
     // compute a test pattern based on pixel ID
@@ -150,9 +148,12 @@ extern "C" __global__ void __raygen__classicRenderer()
 
     // values for caculating edge strength
     bool main_is_hit{false};
+    bool hit_same_object{true};
     uint32_t main_geometryID;
-    int num_missed;
-    int num_different;
+    int num_missed{0};
+    int num_different{0};
+    float main_hitT;
+    int num_farther{0};
 
     // tracing center ray
     {
@@ -177,46 +178,92 @@ extern "C" __global__ void __raygen__classicRenderer()
             main_is_hit = true;
             main_geometryID = prd_main.geometryID;
         }
-    }
-
-    // tracing ray_stencil
-    for (int i = 0; i < stencil_length; i++)
-    {
-        vec3f sub_rayDir = screen_to_direction(screen + ray_stencil[i], camera.direction, camera.horizontal, camera.vertical);
-        PRD_Classic prd_sub;
-        // the values we store the PRD pointer in:
-        uint32_t u0, u1;
-        packPointer(&prd_sub, u0, u1);
-        optixTrace(optixLaunchParams.traversable,
-                   camera.position,
-                   sub_rayDir,
-                   0.f,   // tmin
-                   1e20f, // tmax
-                   0.0f,  // rayTime
-                   OptixVisibilityMask(255),
-                   OPTIX_RAY_FLAG_DISABLE_ANYHIT, //OPTIX_RAY_FLAG_NONE,
-                   CLASSIC_RAY_TYPE,              // SBT offset
-                   RAY_TYPE_COUNT,                // SBT stride
-                   CLASSIC_RAY_TYPE,              // missSBTIndex
-                   u0, u1);
-        if (prd_sub.is_hit)
-        {
-            if (prd_sub.geometryID != main_geometryID)
-            {
-                num_different++;
-            }
-        }
         else
         {
-            num_missed++;
+            hit_same_object = false;
+        }
+        main_hitT = prd_main.hitT;
+    }
+
+    vec3f normals[4];
+    {
+        int current_index{0};
+        // tracing ray_stencil
+        for (int i = 0; i < stencil_length; i++)
+        {
+            vec3f sub_rayDir = screen_to_direction(screen + ray_stencil[i], camera.direction, camera.horizontal, camera.vertical);
+            PRD_Classic prd_sub;
+            if (i == normal_index[current_index])
+            {
+                prd_sub.need_normal = true;
+            }
+
+            // the values we store the PRD pointer in:
+            uint32_t u0, u1;
+            packPointer(&prd_sub, u0, u1);
+            optixTrace(optixLaunchParams.traversable,
+                       camera.position,
+                       sub_rayDir,
+                       0.f,   // tmin
+                       1e20f, // tmax
+                       0.0f,  // rayTime
+                       OptixVisibilityMask(255),
+                       OPTIX_RAY_FLAG_DISABLE_ANYHIT, //OPTIX_RAY_FLAG_NONE,
+                       CLASSIC_RAY_TYPE,              // SBT offset
+                       RAY_TYPE_COUNT,                // SBT stride
+                       CLASSIC_RAY_TYPE,              // missSBTIndex
+                       u0, u1);
+
+            // silhouette edge or intersection line
+            if (prd_sub.is_hit)
+            {
+                if (prd_sub.geometryID != main_geometryID)
+                {
+                    num_different++;
+                    hit_same_object = false;
+                }
+            }
+            else
+            {
+                num_missed++;
+                hit_same_object = false;
+            }
+
+            // crease edge
+            if (prd_sub.need_normal)
+            {
+                normals[current_index] = prd_sub.normal;
+                if (current_index < 3)
+                    current_index++;
+            }
+
+            // self-occluding silhouette
+            if (fabsf(prd_sub.hitT - main_hitT) > optixLaunchParams.classic.DISTANCE_CHANGE_THRESHOLD * main_hitT)
+                num_farther++;
         }
     }
 
     // calculate edge
     vec3f pixelColor = {255.f};
     float edge_strength{0.f};
-    edge_strength = main_is_hit ? get_edge_strength(stencil_length, num_different + num_missed)
-                                : get_edge_strength(stencil_length, num_missed);
+    if (hit_same_object)
+    {
+        const float n_threshold = cosf(optixLaunchParams.classic.NORMAL_CHANGE_THRESHOLD);
+        float normal_change[2]{dot(normals[0], normals[2]), dot(normals[1], normals[3])}; // normal change between 0,2 and 1,3
+        // crease edge
+        if (normal_change[0] < n_threshold || normal_change[1] < n_threshold)
+            edge_strength = 1.f;
+        // self-occluding silhouette
+        else
+            edge_strength = get_edge_strength(stencil_length, num_farther);
+    }
+    // silhouette edge or intersection line
+    else
+    {
+        edge_strength = main_is_hit ? get_edge_strength(stencil_length, num_different + num_missed)
+                                    : get_edge_strength(stencil_length, num_missed);
+    }
+
     pixelColor *= 1 - edge_strength;
 
     const int r = int(255.99f * min(pixelColor.x / numPixelSamples, 1.f));

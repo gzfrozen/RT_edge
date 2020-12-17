@@ -332,7 +332,7 @@ extern "C" __global__ void __closesthit__mono()
         float tmin = edge_distance[i] - optixLaunchParams.parameters.EDGE_DETECTION_DEPTH / tanf(optixLaunchParams.parameters.MIN_EDGE_ANGLE);
         float tmax = edge_distance[i] - optixLaunchParams.parameters.EDGE_DETECTION_DEPTH / tanf(optixLaunchParams.parameters.MAX_EDGE_ANGLE);
         tmin = fmaxf(tmin, 0.f);
-        tmax = fmaxf(tmax, 0.f);
+        // tmax = fmaxf(tmax, 0.f);
 
         optixTrace(optixLaunchParams.traversable,
                    surfPos - surfDepth,
@@ -377,17 +377,20 @@ extern "C" __global__ void __closesthit__classic()
     // compute normal, using either shading normal (if avail), or
     // geometry normal (fallback)
     // ------------------------------------------------------------------
-    const vec3i index = sbtData.index[primID];
-    const float u = optixGetTriangleBarycentrics().x;
-    const float v = optixGetTriangleBarycentrics().y;
+    if (prd_classic.need_normal)
+    {
+        const vec3i index = sbtData.index[primID];
+        const float u = optixGetTriangleBarycentrics().x;
+        const float v = optixGetTriangleBarycentrics().y;
 
-    const vec3f &A = sbtData.vertex[index.x];
-    const vec3f &B = sbtData.vertex[index.y];
-    const vec3f &C = sbtData.vertex[index.z];
-    vec3f Ng = cross(B - A, C - A);
-    vec3f Ns = (sbtData.normal)
-                   ? ((1.f - u - v) * sbtData.normal[index.x] + u * sbtData.normal[index.y] + v * sbtData.normal[index.z])
-                   : Ng;
+        const vec3f &A = sbtData.vertex[index.x];
+        const vec3f &B = sbtData.vertex[index.y];
+        const vec3f &C = sbtData.vertex[index.z];
+        vec3f Ng = cross(B - A, C - A);
+        vec3f Ns = (sbtData.normal)
+                       ? ((1.f - u - v) * sbtData.normal[index.x] + u * sbtData.normal[index.y] + v * sbtData.normal[index.z])
+                       : Ng;
 
-    prd_classic.normal = Ns;
+        prd_classic.normal = Ns;
+    }
 }

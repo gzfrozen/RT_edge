@@ -61,6 +61,7 @@ struct LaunchParams
 
     struct
     {
+        /* radius (screen space) */
         float RAY_STENCIL_RADIUS{1e-2f};
 
         /* number of circles, number of rays in first circle */
@@ -68,8 +69,16 @@ struct LaunchParams
         /* number doubles each time on next circle */
         vec2i RAY_STENCIL_QUALITY{2, 8};
 
-        /* radius (screen space) */
+        /* threshold of crease edges */
+        float NORMAL_CHANGE_THRESHOLD{M_PI * 2.f / 3.f};
+        /* threshold of self-occluding silhouettes */
+        float DISTANCE_CHANGE_THRESHOLD{0.2f};
+
+        /* screen space offside of each ray in the ray stencil */
         vec2f ray_stencil[256];
+        /* the indices of 4 rays that normal is concerned */
+        int stencil_normal_index[4];
+        /* number of rays in the stencil */
         int stencil_length{0};
     } classic;
 
