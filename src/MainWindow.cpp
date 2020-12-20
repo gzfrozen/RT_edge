@@ -147,22 +147,29 @@ void MainWindow::draw_gui()
             ImGui::Begin("Settings", &ui_on); // Create a window called "Hello, world!" and append into it.
             ImGui::SetWindowFontScale(xscale);
 
-            ImGui::PushItemWidth(100.f * xscale);
-            ImGui::SliderFloat("Ray stencil radius", &_params->classic.RAY_STENCIL_RADIUS, 0.0f, 0.2f, "%5.3e");
-            ImGui::SameLine(0.f, 20.f * xscale);
-            ImGui::PushItemWidth(50.f * xscale);
-            ImGui::InputInt2("Ray stencil quality", reinterpret_cast<int *>(&_params->classic.RAY_STENCIL_QUALITY));
+            if (renderer_type == FAST)
+            {
+                ImGui::PushItemWidth(70.f * xscale);
+                ImGui::InputInt("Number of light samples", &_params->parameters.NUM_LIGHT_SAMPLES, 1, 5);
+                ImGui::SameLine(0.f, 20.f * xscale);
+                ImGui::InputInt("Number of pixel samples", &_params->parameters.NUM_PIXEL_SAMPLES, 1, 5);
 
-            ImGui::InputInt("Number of light samples", &_params->parameters.NUM_LIGHT_SAMPLES, 1, 5);
-            ImGui::SameLine(0.f, 20.f * xscale);
-            ImGui::InputInt("Number of pixel samples", &_params->parameters.NUM_PIXEL_SAMPLES, 1, 5);
-
-            ImGui::PushItemWidth(100.f * xscale);
-            ImGui::SliderFloat("Wave Length", &_params->parameters.WAVE_LENGTH, 0.0f, 1000.0f); // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::SliderFloat("Edge detection depth", &_params->parameters.EDGE_DETECTION_DEPTH, 1e-3f, 5.f, "%5.3e");
-            ImGui::SliderFloat("Max edge distance", &_params->parameters.MAX_EDGE_DISTANCE, 0.0f, 1.0f, "%5.3e");
-            ImGui::SliderFloat("Min edge angle", &_params->parameters.MIN_EDGE_ANGLE, 0.0f, _params->parameters.MAX_EDGE_ANGLE, "%.3f");
-            ImGui::SliderFloat("Max edge angle", &_params->parameters.MAX_EDGE_ANGLE, 0.0f, M_PI, "%.3f");
+                ImGui::PushItemWidth(100.f * xscale);
+                ImGui::SliderFloat("Wave Length", &_params->parameters.WAVE_LENGTH, 0.0f, 1000.0f); // Edit 1 float using a slider from 0.0f to 1.0f
+                ImGui::SliderFloat("Edge detection depth", &_params->parameters.EDGE_DETECTION_DEPTH, 1e-3f, 5.f, "%5.3e");
+                ImGui::SliderFloat("Max edge distance", &_params->parameters.MAX_EDGE_DISTANCE, 0.0f, 1.0f, "%5.3e");
+                ImGui::SliderFloat("Min edge angle", &_params->parameters.MIN_EDGE_ANGLE, 0.0f, _params->parameters.MAX_EDGE_ANGLE, "%.3f");
+                ImGui::SliderFloat("Max edge angle", &_params->parameters.MAX_EDGE_ANGLE, 0.0f, M_PI, "%.3f");
+            }
+            else if (renderer_type == CLASSIC)
+            {
+                ImGui::PushItemWidth(100.f * xscale);
+                ImGui::SliderFloat("Ray stencil radius", &_params->classic.RAY_STENCIL_RADIUS, 0.0f, 0.2f, "%5.3e");
+                ImGui::SameLine(0.f, 20.f * xscale);
+                ImGui::PushItemWidth(70.f * xscale);
+                ImGui::InputInt2("Ray stencil quality", reinterpret_cast<int *>(&_params->classic.RAY_STENCIL_QUALITY));
+                ImGui::Text("Press 'Q' again to apply");
+            }
 
             ImGui::NewLine();
             if (ImGui::Button("Load")) // Buttons return true when clicked (most widgets return true when edited/activated)

@@ -891,6 +891,7 @@ void Renderer::setRayStencil()
   int temp_n{n};
   float theta;
   int index{0};
+  int current_index{0};
 
   for (int i = 0; i < N; i++)
   {
@@ -901,8 +902,11 @@ void Renderer::setRayStencil()
       // calculate screen space offset position
       launchParams.classic.ray_stencil[index + j] = vec2f(cosf(theta) * temp_r, sinf(theta) * temp_r);
       // pick out those rays which normal is concerned
-      if (i == N - 1 && j % 4 == 0)
-        normal_index[j / 4] = index + j;
+      if (i == N - 1 && j % (temp_n / 4) == 0)
+      {
+        normal_index[current_index] = index + j;
+        current_index++;
+      }
     }
     index += temp_n;
     temp_n *= 2;

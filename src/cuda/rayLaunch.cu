@@ -131,7 +131,6 @@ extern "C" __global__ void __raygen__fastRenderer()
 
 extern "C" __global__ void __raygen__classicRenderer()
 {
-    const int &numPixelSamples = optixLaunchParams.parameters.NUM_PIXEL_SAMPLES;
     const auto &camera = optixLaunchParams.camera;
     const int &stencil_length = optixLaunchParams.classic.stencil_length;
     const int *const normal_index = optixLaunchParams.classic.stencil_normal_index;
@@ -266,9 +265,9 @@ extern "C" __global__ void __raygen__classicRenderer()
 
     pixelColor *= 1 - edge_strength;
 
-    const int r = int(255.99f * min(pixelColor.x / numPixelSamples, 1.f));
-    const int g = int(255.99f * min(pixelColor.y / numPixelSamples, 1.f));
-    const int b = int(255.99f * min(pixelColor.z / numPixelSamples, 1.f));
+    const int r = int(255.99f * min(pixelColor.x, 1.f));
+    const int g = int(255.99f * min(pixelColor.y, 1.f));
+    const int b = int(255.99f * min(pixelColor.z, 1.f));
 
     // convert to 32-bit rgba value (we explicitly set alpha to 0xff
     // to make stb_image_write happy ...

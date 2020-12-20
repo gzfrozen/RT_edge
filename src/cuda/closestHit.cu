@@ -285,9 +285,9 @@ extern "C" __global__ void __closesthit__mono()
     const vec3f CA = A - C;
 
     vec3f Ng = cross(CA, AB);
-    vec3f Ns = (sbtData.normal)
-                   ? ((1.f - u - v) * sbtData.normal[index.x] + u * sbtData.normal[index.y] + v * sbtData.normal[index.z])
-                   : Ng;
+    // vec3f Ns = (sbtData.normal)
+    //                ? ((1.f - u - v) * sbtData.normal[index.x] + u * sbtData.normal[index.y] + v * sbtData.normal[index.z])
+    //                : Ng;
 
     // ------------------------------------------------------------------
     // face-forward and normalize normals
@@ -298,9 +298,9 @@ extern "C" __global__ void __closesthit__mono()
         Ng = -Ng;
     Ng = normalize(Ng);
 
-    if (dot(Ng, Ns) < 0.f)
-        Ns -= 2.f * dot(Ng, Ns) * Ng;
-    Ns = normalize(Ns);
+    // if (dot(Ng, Ns) < 0.f)
+    //     Ns -= 2.f * dot(Ng, Ns) * Ng;
+    // Ns = normalize(Ns);
 
     // ------------------------------------------------------------------
     // compute edge
@@ -322,9 +322,9 @@ extern "C" __global__ void __closesthit__mono()
     // trace edge ray
     for (int i = 0; i < 3; i++)
     {
-        // per ray date for edge detection
         if (edge_distance[i] > optixLaunchParams.parameters.MAX_EDGE_DISTANCE)
             continue;
+        // per ray data for edge detection
         PRD_Edge prd_edge;
         // the values we store the PRD_Edge pointer in:
         uint32_t u0, u1;
