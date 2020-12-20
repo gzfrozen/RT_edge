@@ -152,6 +152,7 @@ target_precompile_headers(RT_edge PRIVATE
  [["gdt/math/vec.h"]]
  [["gdt/math/AffineSpace.h"]]
  <tiny_obj_loader.h>
+ <stb_image_write.h>
  <stb_image.h>
  <json.hpp>
  )

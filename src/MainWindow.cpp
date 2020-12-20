@@ -12,6 +12,10 @@
 // JSON config
 #include <JSONconfig.hpp>
 
+// Capture screen
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
 MainWindow::MainWindow(const std::string &title,
                        const Model *model,
                        const Camera &camera,
@@ -182,12 +186,21 @@ void MainWindow::draw_gui()
                 json_config.generateConfig(get_camera());
                 json_config.saveFile();
             }
+            ImGui::SameLine(0.f, 10.f * xscale);
+            if (ImGui::Button("Capture"))
+            {
+                static int capID{0};
+                std::ostringstream path;
+                path << "cap" << capID << ".png";
+                capture(path.str());
+                capID++;
+            }
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS), under %d * %d",
                         1000.0f / ImGui::GetIO().Framerate,
                         ImGui::GetIO().Framerate,
-                        _params->frame.size.x,
-                        _params->frame.size.y);
+                        fbSize.x,
+                        fbSize.y);
             ImGui::End();
         }
     }
@@ -205,4 +218,20 @@ void MainWindow::applyConfig()
     cameraFrame.setOrientation(configCamera.from, configCamera.at, configCamera.up);
     renderer_type = json_config.returnRendererType();
     ray_type = json_config.returnRayType();
+}
+
+void MainWindow::capture(const std::string &path)
+{
+    /* iw - actually, it seems that stbi writes the pictures
+         mirrored along the y axis - mirror them here */
+    for (int y = 0; y < fbSize.y / 2; y++)
+    {
+        uint32_t *line_y = pixels.data() + y * fbSize.x;
+        uint32_t *mirrored_y = pixels.data() + (fbSize.y - 1 - y) * fbSize.x;
+        for (int x = 0; x < fbSize.x; x++)
+        {
+            std::swap(line_y[x], mirrored_y[x]);
+        }
+    }
+    stbi_write_png(path.c_str(), fbSize.x, fbSize.y, 4, pixels.data(), fbSize.x * sizeof(uint32_t));
 }

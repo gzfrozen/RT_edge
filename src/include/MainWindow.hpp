@@ -33,6 +33,9 @@ private:
     /*! draw GUI layout */
     void draw_gui() override;
 
+    /*! save screenshot to file */
+    void capture(const std::string &path);
+
     vec2i fbSize;
     GLuint fbTexture{0};
     Renderer renderer;
