@@ -76,10 +76,10 @@ struct LaunchParams
 
         /* screen space offside of each ray in the ray stencil */
         vec2f ray_stencil[256];
-        /* the indices of 4 rays that normal is concerned */
-        int stencil_normal_index[4];
         /* number of rays in the stencil */
         int stencil_length{0};
+        /* the indices of 4 rays that normal is concerned */
+        int stencil_normal_index[4];
     } classic;
 
     OptixTraversableHandle traversable;

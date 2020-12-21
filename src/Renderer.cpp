@@ -883,9 +883,21 @@ void Renderer::setRayStencil()
   int *normal_index = launchParams.classic.stencil_normal_index;
 
   // parameter check
-  assert(h > 0.f);
-  assert(N > 0 && N < 9);
-  assert(n > 0 && n % 4 == 0);
+  if (h <= 0.f)
+  {
+    std::cout << GDT_TERMINAL_YELLOW << "Not a proper value." << GDT_TERMINAL_DEFAULT << std::endl;
+    return;
+  }
+  if (N <= 0)
+  {
+    std::cout << GDT_TERMINAL_YELLOW << "Not a proper value." << GDT_TERMINAL_DEFAULT << std::endl;
+    return;
+  }
+  if (n <= 0 || n % 4 != 0)
+  {
+    std::cout << GDT_TERMINAL_YELLOW << "Not a proper value." << GDT_TERMINAL_DEFAULT << std::endl;
+    return;
+  }
 
   float temp_r;
   int temp_n{n};

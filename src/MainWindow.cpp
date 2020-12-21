@@ -168,11 +168,16 @@ void MainWindow::draw_gui()
             else if (renderer_type == CLASSIC)
             {
                 ImGui::PushItemWidth(100.f * xscale);
-                ImGui::SliderFloat("Ray stencil radius", &_params->classic.RAY_STENCIL_RADIUS, 0.0f, 0.2f, "%5.3e");
+                if (ImGui::SliderFloat("Ray stencil radius", &_params->classic.RAY_STENCIL_RADIUS, 0.0f, 0.2f, "%5.3e"))
+                    cameraFrame.modified = true;
                 ImGui::SameLine(0.f, 20.f * xscale);
                 ImGui::PushItemWidth(70.f * xscale);
-                ImGui::InputInt2("Ray stencil quality", reinterpret_cast<int *>(&_params->classic.RAY_STENCIL_QUALITY));
-                ImGui::Text("Press 'Q' again to apply");
+                if (ImGui::InputInt2("Ray stencil quality", reinterpret_cast<int *>(&_params->classic.RAY_STENCIL_QUALITY)))
+                    cameraFrame.modified = true;
+
+                ImGui::PushItemWidth(100.f * xscale);
+                ImGui::SliderFloat("Crease edge angle threshold", &_params->classic.NORMAL_CHANGE_THRESHOLD, 0.0f, M_PI);
+                ImGui::SliderFloat("Self-occluding silhouette distance threshold", &_params->classic.DISTANCE_CHANGE_THRESHOLD, 0.0f, 1.f);
             }
 
             ImGui::NewLine();
@@ -234,4 +239,5 @@ void MainWindow::capture(const std::string &path)
         }
     }
     stbi_write_png(path.c_str(), fbSize.x, fbSize.y, 4, pixels.data(), fbSize.x * sizeof(uint32_t));
+    std::cout << GDT_TERMINAL_GREEN << "Screenshot saved as " << path << GDT_TERMINAL_DEFAULT << std::endl;
 }

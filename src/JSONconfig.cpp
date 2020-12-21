@@ -89,6 +89,8 @@ void JSONconfig::generateConfig(const Camera &camera)
     config["classic"]["RAY_STENCIL_RADIUS"] = _params->classic.RAY_STENCIL_RADIUS;
     config["classic"]["RAY_STENCIL_QUALITY"]["Number of circles"] = _params->classic.RAY_STENCIL_QUALITY.x;
     config["classic"]["RAY_STENCIL_QUALITY"]["Number of rays"] = _params->classic.RAY_STENCIL_QUALITY.y;
+    config["classic"]["NORMAL_CHANGE_THRESHOLD"] = _params->classic.NORMAL_CHANGE_THRESHOLD;
+    config["classic"]["DISTANCE_CHANGE_THRESHOLD"] = _params->classic.DISTANCE_CHANGE_THRESHOLD;
     config["parameters"]["NUM_LIGHT_SAMPLES"] = _params->parameters.NUM_LIGHT_SAMPLES;
     config["parameters"]["NUM_PIXEL_SAMPLES"] = _params->parameters.NUM_PIXEL_SAMPLES;
     config["parameters"]["WAVE_LENGTH"] = _params->parameters.WAVE_LENGTH;
@@ -106,6 +108,8 @@ void JSONconfig::applyConfig() const
         _params->classic.RAY_STENCIL_RADIUS = config["classic"]["RAY_STENCIL_RADIUS"].get<float>();
         _params->classic.RAY_STENCIL_QUALITY.x = config["classic"]["RAY_STENCIL_QUALITY"]["Number of circles"].get<int>();
         _params->classic.RAY_STENCIL_QUALITY.y = config["classic"]["RAY_STENCIL_QUALITY"]["Number of rays"].get<int>();
+        _params->classic.NORMAL_CHANGE_THRESHOLD = config["classic"]["NORMAL_CHANGE_THRESHOLD"].get<float>();
+        _params->classic.DISTANCE_CHANGE_THRESHOLD = config["classic"]["DISTANCE_CHANGE_THRESHOLD"].get<float>();
         _params->parameters.NUM_LIGHT_SAMPLES = config["parameters"]["NUM_LIGHT_SAMPLES"].get<int>();
         _params->parameters.NUM_PIXEL_SAMPLES = config["parameters"]["NUM_PIXEL_SAMPLES"].get<int>();
         _params->parameters.WAVE_LENGTH = config["parameters"]["WAVE_LENGTH"].get<float>();
