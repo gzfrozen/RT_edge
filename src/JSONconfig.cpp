@@ -70,6 +70,11 @@ int JSONconfig::saveFile() const
 
 void JSONconfig::generateConfig(const Camera &camera)
 {
+    // Light source parameters
+    config["light"]["origin"]["x"] = _params->light.origin.x;
+    config["light"]["origin"]["y"] = _params->light.origin.y;
+    config["light"]["origin"]["z"] = _params->light.origin.z;
+
     // Parameters which will be returned as a Camera type
     config["camera"]["from"]["x"] = camera.from.x;
     config["camera"]["from"]["y"] = camera.from.y;
@@ -105,6 +110,9 @@ void JSONconfig::applyConfig() const
     try
     {
         // Parameters which are directly updated into memory
+        _params->light.origin.x = config["light"]["origin"]["x"].get<float>();
+        _params->light.origin.y = config["light"]["origin"]["y"].get<float>();
+        _params->light.origin.z = config["light"]["origin"]["z"].get<float>();
         _params->classic.RAY_STENCIL_RADIUS = config["classic"]["RAY_STENCIL_RADIUS"].get<float>();
         _params->classic.RAY_STENCIL_QUALITY.x = config["classic"]["RAY_STENCIL_QUALITY"]["Number of circles"].get<int>();
         _params->classic.RAY_STENCIL_QUALITY.y = config["classic"]["RAY_STENCIL_QUALITY"]["Number of rays"].get<int>();
