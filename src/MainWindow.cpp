@@ -170,6 +170,7 @@ void MainWindow::draw_gui()
                 else if (_params->parameters.LAUNCH_RAY_TYPE == MONO_RAY_TYPE || _params->parameters.RENDERER_TYPE == MIXED)
                 {
                     ImGui::PushItemWidth(100.f * xscale);
+                    ImGui::Checkbox("Edge on angle over PI", &_params->parameters.OVER_PI_EDGE);
                     ImGui::SliderFloat("Edge detection depth", &_params->parameters.EDGE_DETECTION_DEPTH, 1e-3f, 5.f, "%5.3e");
                     ImGui::SliderFloat("Max edge distance", &_params->parameters.MAX_EDGE_DISTANCE, 0.0f, 1.0f, "%5.3e");
                     ImGui::SliderFloat("Min edge angle", &_params->parameters.MIN_EDGE_ANGLE, 0.0f, _params->parameters.MAX_EDGE_ANGLE, "%.3f");

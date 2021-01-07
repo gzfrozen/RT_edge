@@ -99,5 +99,6 @@ struct LaunchParams
         float MAX_EDGE_DISTANCE{2e-1f};
         float MIN_EDGE_ANGLE{0.f};
         float MAX_EDGE_ANGLE{M_PI / 2.f};
+        bool OVER_PI_EDGE{false};
     } parameters;
 };

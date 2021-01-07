@@ -70,11 +70,6 @@ int JSONconfig::saveFile() const
 
 void JSONconfig::generateConfig(const Camera &camera)
 {
-    // Light source parameters
-    config["light"]["origin"]["x"] = _params->light.origin.x;
-    config["light"]["origin"]["y"] = _params->light.origin.y;
-    config["light"]["origin"]["z"] = _params->light.origin.z;
-
     // Parameters which will be returned as a Camera type
     config["camera"]["from"]["x"] = camera.from.x;
     config["camera"]["from"]["y"] = camera.from.y;
@@ -91,6 +86,9 @@ void JSONconfig::generateConfig(const Camera &camera)
     config["parameters"]["RENDERER_TYPE"] = _params->parameters.RENDERER_TYPE;
 
     // Parameters which are directly updated into memory
+    config["light"]["origin"]["x"] = _params->light.origin.x;
+    config["light"]["origin"]["y"] = _params->light.origin.y;
+    config["light"]["origin"]["z"] = _params->light.origin.z;
     config["classic"]["RAY_STENCIL_RADIUS"] = _params->classic.RAY_STENCIL_RADIUS;
     config["classic"]["RAY_STENCIL_QUALITY"]["Number of circles"] = _params->classic.RAY_STENCIL_QUALITY.x;
     config["classic"]["RAY_STENCIL_QUALITY"]["Number of rays"] = _params->classic.RAY_STENCIL_QUALITY.y;
@@ -99,6 +97,7 @@ void JSONconfig::generateConfig(const Camera &camera)
     config["parameters"]["NUM_LIGHT_SAMPLES"] = _params->parameters.NUM_LIGHT_SAMPLES;
     config["parameters"]["NUM_PIXEL_SAMPLES"] = _params->parameters.NUM_PIXEL_SAMPLES;
     config["parameters"]["WAVE_LENGTH"] = _params->parameters.WAVE_LENGTH;
+    config["parameters"]["OVER_PI_EDGE"] = _params->parameters.OVER_PI_EDGE;
     config["parameters"]["EDGE_DETECTION_DEPTH"] = _params->parameters.EDGE_DETECTION_DEPTH;
     config["parameters"]["MAX_EDGE_DISTANCE"] = _params->parameters.MAX_EDGE_DISTANCE;
     config["parameters"]["MIN_EDGE_ANGLE"] = _params->parameters.MIN_EDGE_ANGLE;
@@ -121,6 +120,7 @@ void JSONconfig::applyConfig() const
         _params->parameters.NUM_LIGHT_SAMPLES = config["parameters"]["NUM_LIGHT_SAMPLES"].get<int>();
         _params->parameters.NUM_PIXEL_SAMPLES = config["parameters"]["NUM_PIXEL_SAMPLES"].get<int>();
         _params->parameters.WAVE_LENGTH = config["parameters"]["WAVE_LENGTH"].get<float>();
+        _params->parameters.OVER_PI_EDGE = config["parameters"]["OVER_PI_EDGE"].get<bool>();
         _params->parameters.EDGE_DETECTION_DEPTH = config["parameters"]["EDGE_DETECTION_DEPTH"].get<float>();
         _params->parameters.MAX_EDGE_DISTANCE = config["parameters"]["MAX_EDGE_DISTANCE"].get<float>();
         _params->parameters.MIN_EDGE_ANGLE = config["parameters"]["MIN_EDGE_ANGLE"].get<float>();

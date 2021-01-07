@@ -349,7 +349,29 @@ extern "C" __global__ void __closesthit__mono()
                    RAY_TYPE_COUNT, // SBT stride
                    EDGE_RAY_TYPE,  // missSBTIndex
                    u0, u1);
+
         prd_edge.is_edge ? is_edge = true : 0;
+        // rendering feature lines on edges over PI
+        if (optixLaunchParams.parameters.OVER_PI_EDGE)
+        {
+            prd_edge.is_edge = true;
+            optixTrace(optixLaunchParams.traversable,
+                       surfPos + surfDepth,
+                       edge_direction[i],
+                       tmin, // tmin
+                       tmax, // tmax
+                       0.0f, // rayTime
+                       OptixVisibilityMask(255),
+                       // For edge rays: skip any/closest hit shaders and terminate on first
+                       // intersection with anything. The miss shader is used to mark the point
+                       // which is not edge.
+                       OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
+                       EDGE_RAY_TYPE,  // SBT offset
+                       RAY_TYPE_COUNT, // SBT stride
+                       EDGE_RAY_TYPE,  // missSBTIndex
+                       u0, u1);
+            prd_edge.is_edge ? is_edge = true : 0;
+        }
     }
     is_edge ? prd.pixelColor = {0.f, 0.f, 0.f} : 0;
 }
