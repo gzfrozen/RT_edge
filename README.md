@@ -54,4 +54,5 @@ This code requires [CMake](https://cmake.org/download/) (version 3.18 or higher)
 - Press t, switch to phase detection mode
 - (New) Press e, switch to fast feature line mode
 - (New) Press q, switch to classic feature line mode
+- (New) Press m, switch to mixed (normal + fast feature line) rendering mode
 - Press c to check current camera information

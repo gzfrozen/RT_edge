@@ -4,6 +4,7 @@ enum renderer_type
 {
     FAST = 0,
     CLASSIC,
+    MIXED,
     RENDERER_TYPE_COUNT
 };
 

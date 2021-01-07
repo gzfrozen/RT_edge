@@ -429,6 +429,17 @@ void Renderer::createRaygenPrograms()
                                       &raygenPGs[CLASSIC]));
   if (sizeof_log > 1)
     PRINT(log);
+
+  // Mixed renderer;
+  pgDesc.raygen.entryFunctionName = "__raygen__mixedRenderer";
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &raygenPGs[MIXED]));
+  if (sizeof_log > 1)
+    PRINT(log);
 }
 
 /*! does all setup for the miss program(s) we are going to use */
@@ -681,6 +692,22 @@ void Renderer::createCallablePrograms()
                                       &pgOptions,
                                       log, &sizeof_log,
                                       &callablePGs[CLASSIC]));
+  if (sizeof_log > 1)
+    PRINT(log);
+
+  // -------------------------------------------------------
+  // mixed launch: mixed renderer
+  // -------------------------------------------------------
+  pgDesc.callables.moduleCC = module["callableProgram"];
+  pgDesc.callables.entryFunctionNameCC = "__continuation_callable__mixed_launch";
+
+  // OptixProgramGroup raypg;
+  OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+                                      &pgDesc,
+                                      1,
+                                      &pgOptions,
+                                      log, &sizeof_log,
+                                      &callablePGs[MIXED]));
   if (sizeof_log > 1)
     PRINT(log);
 }

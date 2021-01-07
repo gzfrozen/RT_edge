@@ -452,7 +452,7 @@ struct GLFCameraWindow : public GLFWindow
       renderer_type = FAST;
       ray_type = RADIANCE_RAY_TYPE;
       cameraFrame.modified = true;
-      std::cout << "Entering 'rendering' mode" << std::endl;
+      std::cout << "Entering 'radiance' mode" << std::endl;
       break;
     case 't':
     case 'T':
@@ -460,6 +460,12 @@ struct GLFCameraWindow : public GLFWindow
       ray_type = PHASE_RAY_TYPE;
       cameraFrame.modified = true;
       std::cout << "Entering 'phase detection' mode" << std::endl;
+      break;
+    case 'm':
+    case 'M':
+      renderer_type = MIXED;
+      cameraFrame.modified = true;
+      std::cout << "Entering 'mixed rendering' mode" << std::endl;
       break;
     case 'p':
     case 'P':

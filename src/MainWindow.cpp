@@ -151,23 +151,23 @@ void MainWindow::draw_gui()
             ImGui::Begin("Settings", &ui_on, ImGuiWindowFlags_HorizontalScrollbar); // Create a window
             ImGui::SetWindowFontScale(xscale);
 
-            if (renderer_type == FAST)
+            if (renderer_type == FAST || _params->parameters.RENDERER_TYPE == MIXED)
             {
-                if (_params->parameters.LAUNCH_RAY_TYPE == RADIANCE_RAY_TYPE)
+                if (_params->parameters.LAUNCH_RAY_TYPE == RADIANCE_RAY_TYPE || _params->parameters.RENDERER_TYPE == MIXED)
                 {
                     ImGui::PushItemWidth(200.f * xscale);
                     ImGui::SliderFloat3("Light Direction", reinterpret_cast<float *>(&_params->light.origin), -5000.0f, 5000.0f, "%.1f");
-                    ImGui::PushItemWidth(70.f * xscale);
-                    ImGui::InputInt("Number of light samples", &_params->parameters.NUM_LIGHT_SAMPLES, 1, 5);
-                    ImGui::SameLine(0.f, 20.f * xscale);
-                    ImGui::InputInt("Number of pixel samples", &_params->parameters.NUM_PIXEL_SAMPLES, 1, 5);
                 }
-                else if (_params->parameters.LAUNCH_RAY_TYPE == PHASE_RAY_TYPE)
+                ImGui::PushItemWidth(70.f * xscale);
+                ImGui::InputInt("Number of light samples", &_params->parameters.NUM_LIGHT_SAMPLES, 1, 5);
+                ImGui::SameLine(0.f, 20.f * xscale);
+                ImGui::InputInt("Number of pixel samples", &_params->parameters.NUM_PIXEL_SAMPLES, 1, 5);
+                if (_params->parameters.LAUNCH_RAY_TYPE == PHASE_RAY_TYPE)
                 {
                     ImGui::PushItemWidth(100.f * xscale);
                     ImGui::SliderFloat("Wave Length", &_params->parameters.WAVE_LENGTH, 0.0f, 1000.0f);
                 }
-                else if (_params->parameters.LAUNCH_RAY_TYPE == MONO_RAY_TYPE)
+                else if (_params->parameters.LAUNCH_RAY_TYPE == MONO_RAY_TYPE || _params->parameters.RENDERER_TYPE == MIXED)
                 {
                     ImGui::PushItemWidth(100.f * xscale);
                     ImGui::SliderFloat("Edge detection depth", &_params->parameters.EDGE_DETECTION_DEPTH, 1e-3f, 5.f, "%5.3e");
