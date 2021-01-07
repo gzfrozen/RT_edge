@@ -25,7 +25,7 @@ This code requires [CMake](https://cmake.org/download/) (version 3.18 or higher)
 - Latest Nvidia GPU Driver
 - [OptiX 7.2 SDK](https://developer.nvidia.com/designworks/optix/download)
 - a 3D geometry object file
-  - recommend Crytek Sponza, BMW on [https://casual-effects.com/data/](https://casual-effects.com/data/)
+  - recommend Rungholt, Crytek Sponza, BMW on [https://casual-effects.com/data/](https://casual-effects.com/data/)
 
 ## Important settings and parameters
 
